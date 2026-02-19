@@ -8,14 +8,14 @@
   <meta http-equiv="Expires" content="0" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; form-action 'none'" />
   <title>DPU Visual (Client-only)</title>
-  <link rel="stylesheet" href="styles.css?v=20260219" />
+  <link rel="stylesheet" href="styles.css?v=20260220" />
 </head>
 <body>
   <main class="container">
     <h1>DPU visualisering (client-only)</h1>
     <p class="notice">Alle data behandles lokalt i browseren under brug. Værktøjet er et selvstændigt supplement og er ikke officielt tilknyttet producenten af et eventuelt kildesystem.</p>
 
-    <section class="card">
+    <section class="card no-print">
       <h2>Input</h2>
       <div class="controls">
         <label>Antal DPU (min. 2)
@@ -29,6 +29,7 @@
           <input id="importCsv" type="file" accept=".csv,text/csv" />
         </label>
         <button id="exportCsv" type="button">Eksportér scorer (CSV)</button>
+        <button id="exportPdf" type="button">Eksportér grafer/tabeller (PDF)</button>
       </div>
 
       <label for="pasteArea">Paste fra spreadsheet (tab-separeret, én DPU pr. linje):</label>
@@ -90,6 +91,6 @@
     </footer>
   </main>
 
-  <script src="app.js?v=20260219"></script>
+  <script src="app.js?v=20260220"></script>
 </body>
 </html>

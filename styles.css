@@ -314,3 +314,43 @@ th {
     width: 100%;
   }
 }
+
+@media print {
+  body {
+    background: #ffffff;
+    font-size: 12px;
+  }
+
+  .container {
+    max-width: none;
+    padding: 0;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .card {
+    box-shadow: none;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+    margin-bottom: 0.7rem;
+  }
+
+  .chart,
+  .chart-shell,
+  .table-wrap {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  .chart-svg {
+    max-width: 100% !important;
+  }
+
+  button,
+  input,
+  textarea {
+    display: none !important;
+  }
+}

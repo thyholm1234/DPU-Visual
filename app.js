@@ -31,6 +31,7 @@ const inputTableEl = document.getElementById("inputTable");
 const computedTableEl = document.getElementById("computedTable");
 const importCsvEl = document.getElementById("importCsv");
 const exportCsvEl = document.getElementById("exportCsv");
+const exportPdfEl = document.getElementById("exportPdf");
 const resetBtnEl = document.getElementById("resetBtn");
 const applyPasteEl = document.getElementById("applyPaste");
 const pasteAreaEl = document.getElementById("pasteArea");
@@ -142,6 +143,15 @@ exportCsvEl.addEventListener("click", () => {
   a.download = "dpu_scorer_client_only.csv";
   a.click();
   URL.revokeObjectURL(url);
+});
+
+exportPdfEl.addEventListener("click", () => {
+  rerender();
+  window.requestAnimationFrame(() => {
+    setTimeout(() => {
+      window.print();
+    }, 50);
+  });
 });
 
 function makeDefaultRows(count) {
