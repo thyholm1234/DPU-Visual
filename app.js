@@ -562,10 +562,16 @@ function renderWilcoxonSection(data) {
       (pair) => pair.to[`Udviklingsalder_mdr_${scale}`] - pair.from[`Udviklingsalder_mdr_${scale}`]
     );
     const result = wilcoxonSignedRank(deltas);
+    const trend = linearTrend(
+      data.map((row) => row.Krono_mdr),
+      data.map((row) => row[`Udviklingsalder_mdr_${scale}`])
+    );
 
     let interpretation = "Ikke nok data";
     if (result.allZero) {
       interpretation = "Ingen ændring";
+    } else if (result.tooFewPairs) {
+      interpretation = "For få par";
     } else if (Number.isFinite(result.rankBiserial)) {
       interpretation = effectMagnitudeLabel(result.rankBiserial);
     }
@@ -573,9 +579,15 @@ function renderWilcoxonSection(data) {
     return {
       Skala: scale,
       Parring: pairingLabel,
-      "n (par)": result.n,
+      "n (par)": result.nPairs,
+      "n effektive": result.nEffective,
       "Median Δ (mdr)": result.medianDelta,
       "Mean Δ (mdr)": result.meanDelta,
+      "Hældning (mdr/mdr)": trend.slope,
+      "Hældning (mdr/år)": trend.slopePerYear,
+      "Line-fit r": trend.r,
+      "Line-fit R²": trend.rSquared,
+      "Fit niveau": fitMagnitudeLabel(trend.rSquared),
       "Rank-biserial r": result.rankBiserial,
       SRM: result.srm,
       "Effekt niveau": interpretation
@@ -584,7 +596,7 @@ function renderWilcoxonSection(data) {
 
   renderGenericTable(
     container,
-    ["Skala", "Parring", "n (par)", "Median Δ (mdr)", "Mean Δ (mdr)", "Rank-biserial r", "SRM", "Effekt niveau"],
+    ["Skala", "Parring", "n (par)", "n effektive", "Median Δ (mdr)", "Mean Δ (mdr)", "Hældning (mdr/mdr)", "Hældning (mdr/år)", "Line-fit r", "Line-fit R²", "Fit niveau", "Rank-biserial r", "SRM", "Effekt niveau"],
     rows
   );
 }
@@ -615,15 +627,17 @@ function buildAdjacentPairs(data) {
 function wilcoxonSignedRank(differences) {
   const finite = differences.filter((d) => Number.isFinite(d));
   const clean = finite.filter((d) => d !== 0);
-  const n = clean.length;
-  const allZero = finite.length >= 2 && n === 0;
+  const nPairs = finite.length;
+  const nEffective = clean.length;
+  const allZero = nPairs >= 1 && nEffective === 0;
   const meanDelta = round2(mean(finite));
   const sdDelta = std(finite);
   const srm = Number.isFinite(sdDelta) && sdDelta > 0 ? round2(mean(finite) / sdDelta) : NaN;
 
   if (allZero) {
     return {
-      n: finite.length,
+      nPairs,
+      nEffective,
       medianDelta: round2(median(finite)),
       meanDelta,
       wStatistic: 0,
@@ -631,13 +645,15 @@ function wilcoxonSignedRank(differences) {
       pValue: 1,
       rankBiserial: 0,
       srm: 0,
-      allZero: true
+      allZero: true,
+      tooFewPairs: false
     };
   }
 
-  if (n < 2) {
+  if (nPairs < 2 || nEffective < 2) {
     return {
-      n,
+      nPairs,
+      nEffective,
       medianDelta: Number.isFinite(median(differences)) ? round2(median(differences)) : NaN,
       meanDelta,
       wStatistic: NaN,
@@ -645,9 +661,12 @@ function wilcoxonSignedRank(differences) {
       pValue: NaN,
       rankBiserial: NaN,
       srm,
-      allZero: false
+      allZero: false,
+      tooFewPairs: true
     };
   }
+
+  const n = nEffective;
 
   const absWithSign = clean.map((d) => ({ sign: Math.sign(d), abs: Math.abs(d) }));
   absWithSign.sort((a, b) => a.abs - b.abs);
@@ -686,7 +705,8 @@ function wilcoxonSignedRank(differences) {
   const p = 2 * (1 - normalCdf(z));
 
   return {
-    n,
+    nPairs,
+    nEffective,
     medianDelta: round2(median(differences)),
     meanDelta,
     wStatistic: round2(wStatistic),
@@ -694,7 +714,8 @@ function wilcoxonSignedRank(differences) {
     pValue: round4(p),
     rankBiserial: round2(rankBiserial),
     srm,
-    allZero: false
+    allZero: false,
+    tooFewPairs: false
   };
 }
 
@@ -704,6 +725,66 @@ function effectMagnitudeLabel(rankBiserial) {
   if (absValue < 0.3) return "Lille";
   if (absValue < 0.5) return "Moderat";
   return "Stor";
+}
+
+function linearTrend(xValues, yValues) {
+  const pairs = xValues
+    .map((x, idx) => ({ x, y: yValues[idx] }))
+    .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+
+  if (pairs.length < 2) {
+    return {
+      slope: NaN,
+      slopePerYear: NaN,
+      r: NaN,
+      rSquared: NaN
+    };
+  }
+
+  const xs = pairs.map((p) => p.x);
+  const ys = pairs.map((p) => p.y);
+  const meanX = mean(xs);
+  const meanY = mean(ys);
+
+  let num = 0;
+  let denX = 0;
+  let denY = 0;
+  for (let i = 0; i < pairs.length; i += 1) {
+    const dx = xs[i] - meanX;
+    const dy = ys[i] - meanY;
+    num += dx * dy;
+    denX += dx * dx;
+    denY += dy * dy;
+  }
+
+  if (denX === 0 || denY === 0) {
+    return {
+      slope: NaN,
+      slopePerYear: NaN,
+      r: NaN,
+      rSquared: NaN
+    };
+  }
+
+  const slope = num / denX;
+  const r = num / Math.sqrt(denX * denY);
+  const rSquared = r * r;
+
+  return {
+    slope: round4(slope),
+    slopePerYear: round2(slope * 12),
+    r: round4(r),
+    rSquared: round4(rSquared)
+  };
+}
+
+function fitMagnitudeLabel(rSquared) {
+  if (!Number.isFinite(rSquared)) return "Ikke beregnelig";
+  if (rSquared < 0.1) return "Meget lav";
+  if (rSquared < 0.3) return "Lav";
+  if (rSquared < 0.5) return "Moderat";
+  if (rSquared < 0.7) return "God";
+  return "Høj";
 }
 
 function median(values) {
