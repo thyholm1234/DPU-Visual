@@ -785,15 +785,15 @@ function fitMagnitudeLabel(rSquared) {
 
 function slopeYearColor(value) {
   if (!Number.isFinite(value)) return "#111111";
-  if (value <= 0.3) return "#d62828";
+  if (value <= 3) return "#d62828";
 
-  if (value <= 0.5) {
-    const ratio = (value - 0.3) / 0.2;
+  if (value <= 5) {
+    const ratio = (value - 3) / 2;
     return interpolateColor("#d62828", "#f59e0b", ratio);
   }
 
-  if (value <= 0.75) {
-    const ratio = (value - 0.5) / 0.25;
+  if (value <= 7.5) {
+    const ratio = (value - 5) / 2.5;
     return interpolateColor("#f59e0b", "#111111", ratio);
   }
 
