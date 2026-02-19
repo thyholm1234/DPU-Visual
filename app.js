@@ -277,6 +277,9 @@ function renderInputTable() {
       const td = document.createElement("td");
       const input = document.createElement("input");
       input.type = "text";
+      const safeHeader = h.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
+      input.name = `dpu_${rIdx}_${safeHeader}`;
+      input.id = `dpu_${rIdx}_${safeHeader}`;
       input.autocomplete = "off";
       const value = row[h];
       input.value = typeof value === "number" ? String(value).replace(".", ",") : String(value);
