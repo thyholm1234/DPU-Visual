@@ -16,6 +16,7 @@ const SCORE_TO_MONTHS = {
 };
 
 const COLORS = ["#2563eb", "#dc2626", "#059669", "#7c3aed", "#d97706", "#0891b2", "#be185d", "#334155"];
+const COLOR_CLASS = COLORS.map((_, idx) => `series-color-${idx}`);
 
 let state = { numDpu: 5, rows: makeDefaultRows(5) };
 
@@ -323,12 +324,12 @@ function renderCharts(data) {
     combinedSeries.push({
       name: `${row.DPU} - DPU-alder`,
       values: SCALE_NAMES.map((s) => row[`Udviklingsalder_mdr_${s}`]),
-      color: COLORS[idx % COLORS.length]
+      colorClass: COLOR_CLASS[idx % COLORS.length]
     });
     combinedSeries.push({
       name: `${row.DPU} - Kronologisk`,
       values: SCALE_NAMES.map(() => row.Krono_mdr),
-      color: COLORS[idx % COLORS.length],
+      colorClass: COLOR_CLASS[idx % COLORS.length],
       dashed: true
     });
   });
@@ -337,7 +338,7 @@ function renderCharts(data) {
   const diffSeries = data.map((row, idx) => ({
     name: row.DPU,
     values: SCALE_NAMES.map((s) => row[`Afvigelse_mdr_${s}`]),
-    color: COLORS[idx % COLORS.length]
+    colorClass: COLOR_CLASS[idx % COLORS.length]
   }));
   renderLineChart(document.getElementById("chartCombinedDiff"), SCALE_NAMES, diffSeries, "Afvigelse (mdr)", { zeroLine: 0, height: 340 });
 
@@ -358,8 +359,8 @@ function renderCharts(data) {
       host,
       data.map((r) => r.DPU),
       [
-        { name: "DPU-alder", values: data.map((r) => r[`Udviklingsalder_mdr_${scale}`]), color: "#2563eb" },
-        { name: "Kronologisk", values: data.map((r) => r.Krono_mdr), color: "#6b7280", dashed: true }
+        { name: "DPU-alder", values: data.map((r) => r[`Udviklingsalder_mdr_${scale}`]), colorClass: "series-color-0" },
+        { name: "Kronologisk", values: data.map((r) => r.Krono_mdr), colorClass: "series-color-muted", dashed: true }
       ],
       "Alder (mdr)",
       { height: 280 }
@@ -400,7 +401,7 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
 
   const ticks = 5;
   const gradId = `g${Math.random().toString(36).slice(2, 9)}`;
-  let svg = `<svg viewBox='0 0 ${width} ${height}' width='100%' height='${height}' preserveAspectRatio='xMidYMid meet'>`;
+  let svg = `<svg class='chart-svg' viewBox='0 0 ${width} ${height}' width='100%' height='${height}' preserveAspectRatio='xMidYMid meet'>`;
   svg += `<defs><linearGradient id='${gradId}' x1='0%' y1='0%' x2='0%' y2='100%'><stop offset='0%' stop-color='#f8fbff'/><stop offset='100%' stop-color='#ffffff'/></linearGradient></defs>`;
   svg += `<rect x='${margin.left}' y='${margin.top}' width='${plotW}' height='${plotH}' fill='url(#${gradId})' stroke='#eef2f8'/>`;
   svg += `<line x1='${margin.left}' y1='${margin.top}' x2='${margin.left}' y2='${margin.top + plotH}' stroke='#9ca3af'/>`;
@@ -430,10 +431,12 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
 
   series.forEach((s) => {
     const pts = s.values.map((v, i) => `${xPos(i)},${yPos(v)}`).join(" ");
-    svg += `<polyline points='${pts}' fill='none' stroke='${s.color || "#2563eb"}' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' ${s.dashed ? "stroke-dasharray='6 5'" : ""} />`;
+    const lineClass = `series-line ${s.colorClass || "series-color-0"}${s.dashed ? " dashed" : ""}`;
+    svg += `<polyline class='${lineClass}' points='${pts}' fill='none' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' />`;
     s.values.forEach((v, i) => {
       const tip = `${s.name} | ${labels[i]}: ${Number(v).toFixed(1).replace('.', ',')}`;
-      svg += `<circle cx='${xPos(i)}' cy='${yPos(v)}' r='3.2' fill='${s.color || "#2563eb"}'><title>${escapeXml(tip)}</title></circle>`;
+      const pointClass = `series-point ${s.colorClass || "series-color-0"}`;
+      svg += `<circle class='${pointClass}' cx='${xPos(i)}' cy='${yPos(v)}' r='3.2'><title>${escapeXml(tip)}</title></circle>`;
     });
   });
 
@@ -441,9 +444,10 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
   svg += "</svg>";
 
   const legend = series
-    .map(
-      (s) => `<span class='legend-item'><span class='legend-dot' style='background:${s.color || "#2563eb"};${s.dashed ? "border-bottom:2px dashed #64748b;" : ""}'></span>${escapeXml(s.name)}</span>`
-    )
+    .map((s) => {
+      const lineClass = `legend-line ${s.colorClass || "series-color-0"}${s.dashed ? " dashed" : ""}`;
+      return `<span class='legend-item'><span class='${lineClass}'></span>${escapeXml(s.name)}</span>`;
+    })
     .join("");
   container.innerHTML = `<div class='chart-shell'><div class='chart-legend'>${legend}</div>${svg}</div>`;
 }
@@ -501,7 +505,7 @@ function renderDeviationCharts(data) {
       {
         name: "Afvigelse total (mdr)",
         values: data.map((row) => row.Afvigelse_mdr_gns),
-        color: "#dc2626"
+        colorClass: "series-color-1"
       }
     ],
     "Afvigelse (mdr)",
@@ -532,7 +536,7 @@ function renderDeviationCharts(data) {
       {
         name: "Gns afvigelse (mdr)",
         values: meanDeviationByScale,
-        color: "#7c3aed"
+        colorClass: "series-color-3"
       }
     ],
     "Afvigelse (mdr)",
@@ -625,8 +629,7 @@ function renderGenericTable(container, headers, rows) {
 
   container.innerHTML = "";
   const wrap = document.createElement("div");
-  wrap.className = "table-wrap";
-  wrap.style.marginBottom = "0.8rem";
+  wrap.className = "table-wrap spaced";
   wrap.appendChild(table);
   container.appendChild(wrap);
 }

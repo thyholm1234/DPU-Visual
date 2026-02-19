@@ -218,11 +218,44 @@ th {
   padding: 0.18rem 0.5rem;
 }
 
-.legend-dot {
-  width: 10px;
-  height: 10px;
+.legend-line {
+  width: 18px;
+  height: 4px;
   border-radius: 999px;
   display: inline-block;
+  background: var(--series-color, #2563eb);
+  border-bottom: 2px solid var(--series-color, #2563eb);
+}
+
+.legend-line.dashed {
+  background: transparent;
+  border-bottom-style: dashed;
+}
+
+.chart-svg .series-line {
+  stroke: var(--series-color, #2563eb);
+}
+
+.chart-svg .series-line.dashed {
+  stroke-dasharray: 6 5;
+}
+
+.chart-svg .series-point {
+  fill: var(--series-color, #2563eb);
+}
+
+.series-color-0 { --series-color: #2563eb; color: #2563eb; }
+.series-color-1 { --series-color: #dc2626; color: #dc2626; }
+.series-color-2 { --series-color: #059669; color: #059669; }
+.series-color-3 { --series-color: #7c3aed; color: #7c3aed; }
+.series-color-4 { --series-color: #d97706; color: #d97706; }
+.series-color-5 { --series-color: #0891b2; color: #0891b2; }
+.series-color-6 { --series-color: #be185d; color: #be185d; }
+.series-color-7 { --series-color: #334155; color: #334155; }
+.series-color-muted { --series-color: #6b7280; color: #6b7280; }
+
+.table-wrap.spaced {
+  margin-bottom: 0.8rem;
 }
 
 .small {
