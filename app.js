@@ -15,10 +15,9 @@ const SCORE_TO_MONTHS = {
   8: 24, 9: 30, 10: 36, 11: 42, 12: 48, 13: 60, 14: 72
 };
 
-const STORAGE_KEY = "dpu_client_only_state_v1";
 const COLORS = ["#2563eb", "#dc2626", "#059669", "#7c3aed", "#d97706", "#0891b2", "#be185d", "#334155"];
 
-let state = loadState() || { numDpu: 5, rows: makeDefaultRows(5) };
+let state = { numDpu: 5, rows: makeDefaultRows(5) };
 
 const numDpuEl = document.getElementById("numDpu");
 const inputTableEl = document.getElementById("inputTable");
@@ -738,18 +737,6 @@ function splitCsvLine(line, delimiter) {
   return result;
 }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
 
 function fmt(n) {
   if (!Number.isFinite(n)) return "-";
@@ -777,7 +764,6 @@ function rerender() {
   renderComputedTable(data);
   renderCharts(data);
   renderStats(data);
-  saveState();
 }
 
 rerender();
