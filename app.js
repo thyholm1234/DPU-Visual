@@ -18,7 +18,7 @@ const SCORE_TO_MONTHS = {
 const COLORS = ["#2563eb", "#dc2626", "#059669", "#7c3aed", "#d97706", "#0891b2", "#be185d", "#334155"];
 const COLOR_CLASS = COLORS.map((_, idx) => `series-color-${idx}`);
 
-let state = { numDpu: 3,rows: makeDefaultRows(5) };
+let state = { numDpu: 2, rows: makeDefaultRows(2) };
 
 const numDpuEl = document.getElementById("numDpu");
 const inputTableEl = document.getElementById("inputTable");
@@ -32,14 +32,15 @@ const pasteAreaEl = document.getElementById("pasteArea");
 numDpuEl.value = String(state.numDpu);
 
 numDpuEl.addEventListener("change", () => {
-  const value = clamp(parseInt(numDpuEl.value, 10) || 5, 2, 5);
+  const value = Math.max(2, parseInt(numDpuEl.value, 10) || 2);
   state.numDpu = value;
   state.rows = normalizeRows(state.rows, value);
   rerender();
 });
 
 resetBtnEl.addEventListener("click", () => {
-  state = { numDpu: Number(numDpuEl.value) || 5, rows: makeDefaultRows(Number(numDpuEl.value) || 5) };
+  const value = Math.max(2, Number(numDpuEl.value) || 2);
+  state = { numDpu: value, rows: makeDefaultRows(value) };
   rerender();
 });
 
