@@ -76,8 +76,12 @@ importCsvEl.addEventListener("change", async (event) => {
   const parsed = parseCsv(text);
   if (!parsed.rows.length) return;
 
-  const rows = normalizeRows([], state.numDpu);
-  parsed.rows.slice(0, state.numDpu).forEach((src, idx) => {
+  const importedCount = Math.max(2, parsed.rows.length);
+  state.numDpu = importedCount;
+  numDpuEl.value = String(importedCount);
+
+  const rows = normalizeRows([], importedCount);
+  parsed.rows.slice(0, importedCount).forEach((src, idx) => {
     const row = rows[idx];
     row.DPU = String(src.DPU || row.DPU);
     row.Alder_år = clampInt(parseLocaleNumber(src.Alder_år, row.Alder_år), 0, 18);
