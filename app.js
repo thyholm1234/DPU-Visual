@@ -186,23 +186,127 @@ async function exportReportPdf() {
       format: "a4",
       compress: true
     });
-    const pageWidth = pdf.internal.pageSize.getWidth() - 40;
 
-    await new Promise((resolve) => {
-      pdf.html(clone, {
-        margin: [24, 20, 24, 20],
-        width: pageWidth,
-        windowWidth: PDF_RENDER_WIDTH,
-        autoPaging: "text",
-        html2canvas: {
-          scale: 1.15,
+    const marginLeft = 24;
+    const marginRight = 24;
+    const marginTop = 28;
+    const marginBottom = 28;
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const contentWidth = pageWidth - marginLeft - marginRight;
+    let cursorY = marginTop;
+
+    const ensureSpace = (requiredHeight) => {
+      if (cursorY + requiredHeight <= pageHeight - marginBottom) return;
+      pdf.addPage();
+      cursorY = marginTop;
+    };
+
+    const drawParagraph = (text, fontSize = 10, extraGap = 2) => {
+      if (!text) return;
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(fontSize);
+      const lines = pdf.splitTextToSize(text, contentWidth);
+      const textHeight = lines.length * (fontSize + 1.8);
+      ensureSpace(textHeight + extraGap);
+      pdf.text(lines, marginLeft, cursorY);
+      cursorY += textHeight + extraGap;
+    };
+
+    const isInsideNoPrint = (el) => Boolean(el.closest(".no-print"));
+
+    const blocks = [];
+    const elements = clone.querySelectorAll("h1, h2, h3, p.notice, p.small, .chart, .chart-shell, table");
+    elements.forEach((el) => {
+      if (isInsideNoPrint(el)) return;
+      if (el.matches(".chart-shell") && el.closest(".chart")) return;
+      if ((el.matches("h1, h2, h3, p.notice, p.small")) && (el.closest(".chart") || el.closest(".chart-shell"))) return;
+
+      if (el.matches("table")) {
+        blocks.push({ type: "table", el });
+        return;
+      }
+      if (el.matches(".chart, .chart-shell")) {
+        blocks.push({ type: "chart", el });
+        return;
+      }
+      const text = (el.textContent || "").trim();
+      if (!text) return;
+      blocks.push({ type: "text", tag: el.tagName.toLowerCase(), text });
+    });
+
+    for (const block of blocks) {
+      if (block.type === "text") {
+        if (block.tag === "h1") {
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(17);
+          const lines = pdf.splitTextToSize(block.text, contentWidth);
+          const h = lines.length * 20;
+          ensureSpace(h + 4);
+          pdf.text(lines, marginLeft, cursorY);
+          cursorY += h;
+          continue;
+        }
+        if (block.tag === "h2") {
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(13);
+          const lines = pdf.splitTextToSize(block.text, contentWidth);
+          const h = lines.length * 15;
+          ensureSpace(h + 2);
+          pdf.text(lines, marginLeft, cursorY);
+          cursorY += h;
+          continue;
+        }
+        if (block.tag === "h3") {
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(11.5);
+          const lines = pdf.splitTextToSize(block.text, contentWidth);
+          const h = lines.length * 13.5;
+          ensureSpace(h + 2);
+          pdf.text(lines, marginLeft, cursorY);
+          cursorY += h;
+          continue;
+        }
+        drawParagraph(block.text, 9.6, 3);
+        continue;
+      }
+
+      if (block.type === "table") {
+        if (typeof pdf.autoTable !== "function") {
+          drawParagraph("(Tabel kunne ikke renderes: AutoTable mangler)", 9.2, 4);
+          continue;
+        }
+
+        pdf.autoTable({
+          html: block.el,
+          startY: cursorY,
+          margin: { left: marginLeft, right: marginRight },
+          styles: { font: "helvetica", fontSize: 7.9, cellPadding: 2.2, overflow: "linebreak" },
+          headStyles: { fillColor: [248, 250, 253], textColor: [49, 51, 63], fontStyle: "bold" },
+          theme: "grid",
+          pageBreak: "auto",
+          rowPageBreak: "avoid"
+        });
+
+        cursorY = (pdf.lastAutoTable?.finalY || cursorY) + 8;
+        continue;
+      }
+
+      if (block.type === "chart") {
+        const canvas = await window.html2canvas(block.el, {
+          scale: 1.5,
           useCORS: true,
           backgroundColor: "#ffffff",
           windowWidth: PDF_RENDER_WIDTH
-        },
-        callback: () => resolve()
-      });
-    });
+        });
+        const imgWidth = contentWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        ensureSpace(imgHeight + 6);
+        const imgData = canvas.toDataURL("image/png", 0.95);
+        pdf.addImage(imgData, "PNG", marginLeft, cursorY, imgWidth, imgHeight, undefined, "FAST");
+        cursorY += imgHeight + 6;
+      }
+    }
 
     const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-");
     pdf.save(`dpu_rapport_${timestamp}.pdf`);
