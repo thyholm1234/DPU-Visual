@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DPU Visual (Client-only)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>DPU visualisering (client-only)</h1>
+    <p class="notice">Alle data behandles lokalt i browseren. Ingen backend-kald.</p>
+
+    <section class="card">
+      <h2>Input</h2>
+      <div class="controls">
+        <label>Antal DPU (2-5)
+          <input id="numDpu" type="number" min="2" max="5" value="5" />
+        </label>
+        <button id="resetBtn" type="button">Nulstil</button>
+      </div>
+
+      <div class="controls">
+        <label class="file-label">Importér scorer (CSV)
+          <input id="importCsv" type="file" accept=".csv,text/csv" />
+        </label>
+        <button id="exportCsv" type="button">Eksportér scorer (CSV)</button>
+      </div>
+
+      <label for="pasteArea">Paste fra spreadsheet (tab-separeret, én DPU pr. linje):</label>
+        <textarea id="pasteArea" rows="4" placeholder="DPU_1	2	8,5	9	... (uden måned) eller DPU_1	2	6	8,5	9	... (med måned)"></textarea>
+      <button id="applyPaste" type="button">Indsæt data</button>
+
+      <div id="inputTable"></div>
+    </section>
+
+    <section class="card">
+      <h2>Beregnede data</h2>
+      <div id="computedTable"></div>
+    </section>
+
+    <section class="card">
+      <h2>Grafer</h2>
+      <h3>Samlet profilplot (alle DPU i samme graf)</h3>
+      <div id="chartCombinedProfile"></div>
+
+      <h3>Afvigelse fra kronologisk alder (alle DPU)</h3>
+      <div id="chartCombinedDiff"></div>
+
+      <h3>Skala-tværsnit (9 grafer)</h3>
+      <div id="crossCharts" class="grid"></div>
+    </section>
+
+    <section class="card">
+      <h2>Statistik uden normdata</h2>
+      <p class="small">Viser intern variation og 95% konfidensintervaller baseret på egne data.</p>
+      <h3>Afvigelse fra kronologisk alder (oversigt)</h3>
+      <div id="deviationSummaryByDpu"></div>
+      <div id="deviationSummaryByScale"></div>
+      <div id="deviationCharts" class="grid"></div>
+
+      <h3>Gennemsnitsalder med 95% CI (intern statistik)</h3>
+      <div id="ageCiSummary"></div>
+
+      <h3>DPU-niveau (tværs over skalaer)</h3>
+      <div id="statsDpu"></div>
+      <h3>Skala-niveau (tværs over DPU)</h3>
+      <div id="statsScale"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

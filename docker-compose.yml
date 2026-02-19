@@ -1,0 +1,9 @@
+version: "3.9"
+
+services:
+  dpu-client:
+    build: .
+    ports:
+      - "${PORT:-8073}:${PORT:-8073}"
+    command: ["python", "-m", "http.server", "${PORT:-8073}"]
+    restart: unless-stopped
