@@ -495,14 +495,14 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
     svg += `<line x1='${margin.left}' y1='${y}' x2='${margin.left + plotW}' y2='${y}' stroke='#64748b' stroke-dasharray='5 4'/>`;
   }
 
-  series.forEach((s) => {
+  series.forEach((s, seriesIdx) => {
     const pts = s.values.map((v, i) => `${xPos(i)},${yPos(v)}`).join(" ");
     const lineClass = `series-line ${s.colorClass || "series-color-0"}${s.dashed ? " dashed" : ""}`;
-    svg += `<polyline class='${lineClass}' points='${pts}' fill='none' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' />`;
+    svg += `<polyline class='${lineClass}' data-series-index='${seriesIdx}' points='${pts}' fill='none' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' />`;
     s.values.forEach((v, i) => {
       const tip = `${s.name} | ${labels[i]}: ${Number(v).toFixed(1).replace('.', ',')}`;
       const pointClass = `series-point ${s.colorClass || "series-color-0"}`;
-      svg += `<circle class='${pointClass}' cx='${xPos(i)}' cy='${yPos(v)}' r='3.2'><title>${escapeXml(tip)}</title></circle>`;
+      svg += `<circle class='${pointClass}' data-series-index='${seriesIdx}' cx='${xPos(i)}' cy='${yPos(v)}' r='3.2'><title>${escapeXml(tip)}</title></circle>`;
     });
   });
 
@@ -510,12 +510,40 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
   svg += "</svg>";
 
   const legend = series
-    .map((s) => {
+    .map((s, idx) => {
       const lineClass = `legend-line ${s.colorClass || "series-color-0"}${s.dashed ? " dashed" : ""}`;
-      return `<span class='legend-item'><span class='${lineClass}'></span>${escapeXml(s.name)}</span>`;
+      return `<span class='legend-item legend-toggle' role='button' tabindex='0' aria-pressed='true' data-series-index='${idx}'><span class='${lineClass}'></span>${escapeXml(s.name)}</span>`;
     })
     .join("");
   container.innerHTML = `<div class='chart-shell'><div class='chart-legend'>${legend}</div>${svg}</div>`;
+
+  const setSeriesVisible = (seriesIndex, visible) => {
+    const chartElements = container.querySelectorAll(`.chart-svg [data-series-index='${seriesIndex}']`);
+    chartElements.forEach((element) => {
+      element.style.display = visible ? "" : "none";
+    });
+
+    const legendItem = container.querySelector(`.legend-item[data-series-index='${seriesIndex}']`);
+    if (!legendItem) return;
+    legendItem.classList.toggle("is-off", !visible);
+    legendItem.setAttribute("aria-pressed", visible ? "true" : "false");
+  };
+
+  container.querySelectorAll(".legend-item[data-series-index]").forEach((legendItem) => {
+    const seriesIndex = Number(legendItem.getAttribute("data-series-index"));
+    const toggle = () => {
+      const isVisible = legendItem.getAttribute("aria-pressed") !== "false";
+      setSeriesVisible(seriesIndex, !isVisible);
+    };
+
+    legendItem.addEventListener("click", toggle);
+    legendItem.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggle();
+      }
+    });
+  });
 }
 
 function renderStats(data) {

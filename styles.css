@@ -218,6 +218,20 @@ th {
   padding: 0.18rem 0.5rem;
 }
 
+.legend-item.legend-toggle {
+  cursor: pointer;
+  user-select: none;
+}
+
+.legend-item.legend-toggle:focus-visible {
+  outline: 2px solid var(--st-focus);
+  outline-offset: 2px;
+}
+
+.legend-item.is-off {
+  opacity: 0.45;
+}
+
 .legend-line {
   width: 18px;
   height: 4px;
