@@ -1050,8 +1050,9 @@ function parseCsv(text) {
     headers[0] = headers[0].replace(/^\uFEFF/, "");
   }
 
-  const expectsHeader = headers.includes("DPU") && headers.includes("Alder_år");
-  const hasMonthColumn = headers.includes("Alder_mdr");
+  const normalizedHeaders = headers.map(normalizeHeaderKey);
+  const expectsHeader = normalizedHeaders.includes("dpu") && normalizedHeaders.includes("alder_ar");
+  const hasMonthColumn = normalizedHeaders.includes("alder_mdr");
   const dataLines = expectsHeader ? lines.slice(1) : lines;
 
   if (!expectsHeader) {
@@ -1063,19 +1064,54 @@ function parseCsv(text) {
     }
   }
 
+  const normalizedToCanonical = buildNormalizedHeaderMap();
+
   const rows = dataLines.map((line) => {
     const cols = splitCsvLine(line, delimiter);
     const obj = {};
     headers.forEach((h, i) => {
-      obj[h] = (cols[i] || "").trim();
+      const normalized = normalizeHeaderKey(h);
+      const canonicalKey = normalizedToCanonical[normalized] || h;
+      obj[canonicalKey] = (cols[i] || "").trim();
     });
     return obj;
   });
 
   return {
     rows,
-    hasMonthColumn: headers.includes("Alder_mdr")
+    hasMonthColumn: headers.map(normalizeHeaderKey).includes("alder_mdr")
   };
+}
+
+function normalizeHeaderKey(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase()
+    .replace(/aar/g, "ar");
+}
+
+function buildNormalizedHeaderMap() {
+  const map = {
+    dpu: "DPU",
+    navn: "DPU",
+    navn_id: "DPU",
+    alder_ar: "Alder_år",
+    alder_aar: "Alder_år",
+    alder_year: "Alder_år",
+    alder_years: "Alder_år",
+    alder_mdr: "Alder_mdr",
+    alder_maneder: "Alder_mdr",
+    alder_months: "Alder_mdr"
+  };
+
+  SCALE_NAMES.forEach((scale) => {
+    map[normalizeHeaderKey(scale)] = scale;
+  });
+
+  return map;
 }
 
 function getImportLineInfo(text) {
