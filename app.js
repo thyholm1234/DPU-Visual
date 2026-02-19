@@ -569,7 +569,7 @@ function renderStats(data) {
   renderStatsTable(document.getElementById("statsDpu"), dpuRows, "DPU");
   renderGenericTable(
     document.getElementById("statsScale"),
-    ["Skala", "n", "Gns afvigelse (mdr)", "Min afvigelse (mdr)", "Max afvigelse (mdr)", "95% CI lav", "95% CI høj"],
+    ["Skala", "n", "Gns afvigelse (mdr)", "Min afvigelse (mdr)", "Max afvigelse (mdr)", `${CI_LABEL} lav`, `${CI_LABEL} høj`],
     buildScaleDeviationSummaryRows(data)
   );
 }
@@ -1083,8 +1083,8 @@ function buildScaleDeviationSummaryRows(data) {
       "Gns afvigelse (mdr)": ci.mean,
       "Min afvigelse (mdr)": values.length ? Math.min(...values) : NaN,
       "Max afvigelse (mdr)": values.length ? Math.max(...values) : NaN,
-      "95% CI lav": ci.low,
-      "95% CI høj": ci.high
+      [`${CI_LABEL} lav`]: ci.low,
+      [`${CI_LABEL} høj`]: ci.high
     };
   });
 }
@@ -1206,7 +1206,7 @@ function renderStatsTable(container, rows, firstColLabel) {
   const table = document.createElement("table");
   table.innerHTML = `
     <thead>
-      <tr><th>${firstColLabel}</th><th>n</th><th>Gns afvigelse</th><th>95% CI lav</th><th>95% CI høj</th></tr>
+      <tr><th>${firstColLabel}</th><th>n</th><th>Gns afvigelse</th><th>${CI_LABEL} lav</th><th>${CI_LABEL} høj</th></tr>
     </thead>
     <tbody>
       ${rows.map((r) => `

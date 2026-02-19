@@ -13,7 +13,7 @@
 <body>
   <main class="container">
     <h1>DPU visualisering (client-only)</h1>
-    <p class="notice">Alle data behandles lokalt i browseren.  Opdater browseren for at slette data.</p>
+    <p class="notice">Alle data behandles lokalt i browseren under brug. Værktøjet er et selvstændigt supplement og er ikke officielt tilknyttet producenten af et eventuelt kildesystem.</p>
 
     <section class="card">
       <h2>Input</h2>
@@ -79,6 +79,15 @@
       <p class="small">Beregnet på par af målinger (12±6 mdr, ellers nabomålinger). Fokus på effektstørrelse frem for p-værdi ved små datasæt.</p>
       <div id="wilcoxonSection"></div>
     </section>
+
+    <footer class="site-footer" aria-label="Ansvarsfraskrivelse">
+      <div class="card disclaimer-card">
+        <h2>Ansvarsfraskrivelse</h2>
+        <p class="small">Dette værktøj er et støtteværktøj til visualisering og intern statistik. Resultater må ikke stå alene som diagnostisk eller behandlingsmæssigt beslutningsgrundlag.</p>
+        <p class="small">Beregninger (fx interpolation, line-fit og konfidensintervaller) er forenklede og afhænger af datakvalitet, datamængde og antagelser. Verificér altid resultater fagligt før anvendelse.</p>
+        <p class="small">Der ydes ingen garanti for fuldstændighed, fejlfrihed eller egnethed til et bestemt formål. Brug sker på eget ansvar.</p>
+      </div>
+    </footer>
   </main>
 
   <script src="app.js?v=20260219"></script>
