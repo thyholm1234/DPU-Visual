@@ -558,11 +558,15 @@ function renderWilcoxonSection(data) {
   }
 
   const rows = SCALE_NAMES.map((scale) => {
-    const deltas = usedPairs.map((pair) => pair.to[scale] - pair.from[scale]);
+    const deltas = usedPairs.map(
+      (pair) => pair.to[`Udviklingsalder_mdr_${scale}`] - pair.from[`Udviklingsalder_mdr_${scale}`]
+    );
     const result = wilcoxonSignedRank(deltas);
 
     let interpretation = "Ikke nok data";
-    if (Number.isFinite(result.pValue)) {
+    if (result.allZero) {
+      interpretation = "Ingen ændring (alle Δ=0)";
+    } else if (Number.isFinite(result.pValue)) {
       interpretation = result.pValue < 0.05 ? "Signifikant (p < 0,05)" : "Ikke signifikant";
     }
 
@@ -609,15 +613,30 @@ function buildAdjacentPairs(data) {
 }
 
 function wilcoxonSignedRank(differences) {
-  const clean = differences.filter((d) => Number.isFinite(d) && d !== 0);
+  const finite = differences.filter((d) => Number.isFinite(d));
+  const clean = finite.filter((d) => d !== 0);
   const n = clean.length;
+  const allZero = finite.length >= 2 && n === 0;
+
+  if (allZero) {
+    return {
+      n: finite.length,
+      medianDelta: round2(median(finite)),
+      wStatistic: 0,
+      zScore: 0,
+      pValue: 1,
+      allZero: true
+    };
+  }
+
   if (n < 2) {
     return {
       n,
       medianDelta: Number.isFinite(median(differences)) ? round2(median(differences)) : NaN,
       wStatistic: NaN,
       zScore: NaN,
-      pValue: NaN
+      pValue: NaN,
+      allZero: false
     };
   }
 
@@ -660,7 +679,8 @@ function wilcoxonSignedRank(differences) {
     medianDelta: round2(median(differences)),
     wStatistic: round2(wStatistic),
     zScore: round2(z),
-    pValue: round4(p)
+    pValue: round4(p),
+    allZero: false
   };
 }
 
@@ -828,7 +848,13 @@ function renderGenericTable(container, headers, rows) {
     headers.forEach((header) => {
       const td = document.createElement("td");
       const value = row[header];
-      td.textContent = Number.isFinite(value) ? fmt(value) : String(value ?? "-");
+      if (!Number.isFinite(value)) {
+        td.textContent = String(value ?? "-");
+      } else if (header === "n" || header.includes("n (")) {
+        td.textContent = String(Math.round(value));
+      } else {
+        td.textContent = fmt(value);
+      }
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
