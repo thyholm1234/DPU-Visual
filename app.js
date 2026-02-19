@@ -80,12 +80,19 @@ importCsvEl.addEventListener("change", async (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
   const text = await file.text();
-  const parsed = parseCsv(text);
-  if (!parsed.rows.length) return;
+  const importInfo = getImportLineInfo(text);
+  const importedCount = Math.max(DEFAULT_DPU, importInfo.dataLineCount);
 
-  const importedCount = Math.max(2, parsed.rows.length);
   state.numDpu = importedCount;
   numDpuEl.value = String(importedCount);
+
+  const parsed = parseCsv(text);
+  if (!parsed.rows.length) {
+    state.rows = normalizeRows([], importedCount);
+    rerender();
+    importCsvEl.value = "";
+    return;
+  }
 
   const rows = normalizeRows([], importedCount);
   parsed.rows.slice(0, importedCount).forEach((src, idx) => {
@@ -102,6 +109,7 @@ importCsvEl.addEventListener("change", async (event) => {
 
   state.rows = rows;
   rerender();
+  importCsvEl.value = "";
 });
 
 exportCsvEl.addEventListener("click", () => {
@@ -482,6 +490,7 @@ function renderStats(data) {
   renderDeviationSummaries(data);
   renderDeviationCharts(data);
   renderAgeCiSummary(data);
+  renderWilcoxonSection(data);
 
   const dpuRows = data.map((row) => {
     const values = SCALE_NAMES.map((s) => row[`Afvigelse_mdr_${s}`]);
@@ -509,6 +518,142 @@ function renderStats(data) {
 
   renderStatsTable(document.getElementById("statsDpu"), dpuRows, "DPU");
   renderStatsTable(document.getElementById("statsScale"), scaleRows, "Skala");
+}
+
+function renderWilcoxonSection(data) {
+  const container = document.getElementById("wilcoxonSection");
+  if (!container) return;
+
+  const yearPairs = buildYearToYearPairs(data);
+  if (!yearPairs.length) {
+    container.innerHTML = "<p class='small'>Ingen år-til-år par fundet (kræver mindst to målinger med ca. 12 måneders afstand).</p>";
+    return;
+  }
+
+  const rows = SCALE_NAMES.map((scale) => {
+    const deltas = yearPairs.map((pair) => pair.to[scale] - pair.from[scale]);
+    const result = wilcoxonSignedRank(deltas);
+
+    let interpretation = "Ikke nok data";
+    if (Number.isFinite(result.pValue)) {
+      interpretation = result.pValue < 0.05 ? "Signifikant (p < 0,05)" : "Ikke signifikant";
+    }
+
+    return {
+      Skala: scale,
+      "n (par)": result.n,
+      "Median Δ score": result.medianDelta,
+      "W": result.wStatistic,
+      "z": result.zScore,
+      "p (to-sidet)": result.pValue,
+      Vurdering: interpretation
+    };
+  });
+
+  renderGenericTable(
+    container,
+    ["Skala", "n (par)", "Median Δ score", "W", "z", "p (to-sidet)", "Vurdering"],
+    rows
+  );
+}
+
+function buildYearToYearPairs(data) {
+  const sorted = [...data].sort((a, b) => a.Krono_mdr - b.Krono_mdr);
+  const pairs = [];
+  for (let i = 1; i < sorted.length; i += 1) {
+    const prev = sorted[i - 1];
+    const curr = sorted[i];
+    const monthDiff = curr.Krono_mdr - prev.Krono_mdr;
+    if (monthDiff >= 9 && monthDiff <= 15) {
+      pairs.push({ from: prev, to: curr });
+    }
+  }
+  return pairs;
+}
+
+function wilcoxonSignedRank(differences) {
+  const clean = differences.filter((d) => Number.isFinite(d) && d !== 0);
+  const n = clean.length;
+  if (n < 2) {
+    return {
+      n,
+      medianDelta: Number.isFinite(median(differences)) ? round2(median(differences)) : NaN,
+      wStatistic: NaN,
+      zScore: NaN,
+      pValue: NaN
+    };
+  }
+
+  const absWithSign = clean.map((d) => ({ sign: Math.sign(d), abs: Math.abs(d) }));
+  absWithSign.sort((a, b) => a.abs - b.abs);
+
+  let idx = 0;
+  while (idx < absWithSign.length) {
+    let j = idx;
+    while (j < absWithSign.length && absWithSign[j].abs === absWithSign[idx].abs) {
+      j += 1;
+    }
+    const rankStart = idx + 1;
+    const rankEnd = j;
+    const averageRank = (rankStart + rankEnd) / 2;
+    for (let k = idx; k < j; k += 1) {
+      absWithSign[k].rank = averageRank;
+    }
+    idx = j;
+  }
+
+  let wPlus = 0;
+  let wMinus = 0;
+  absWithSign.forEach((entry) => {
+    if (entry.sign > 0) {
+      wPlus += entry.rank;
+    } else {
+      wMinus += entry.rank;
+    }
+  });
+
+  const wStatistic = Math.min(wPlus, wMinus);
+  const meanW = (n * (n + 1)) / 4;
+  const varW = (n * (n + 1) * (2 * n + 1)) / 24;
+  const z = (Math.abs(wPlus - meanW) - 0.5) / Math.sqrt(varW);
+  const p = 2 * (1 - normalCdf(z));
+
+  return {
+    n,
+    medianDelta: round2(median(differences)),
+    wStatistic: round2(wStatistic),
+    zScore: round2(z),
+    pValue: round4(p)
+  };
+}
+
+function median(values) {
+  const clean = values.filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
+  if (!clean.length) return NaN;
+  const mid = Math.floor(clean.length / 2);
+  return clean.length % 2 ? clean[mid] : (clean[mid - 1] + clean[mid]) / 2;
+}
+
+function erf(x) {
+  const sign = x < 0 ? -1 : 1;
+  const absX = Math.abs(x);
+  const t = 1 / (1 + 0.3275911 * absX);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t) * Math.exp(-absX * absX);
+  return sign * y;
+}
+
+function normalCdf(z) {
+  return 0.5 * (1 + erf(z / Math.SQRT2));
+}
+
+function round2(n) {
+  if (!Number.isFinite(n)) return NaN;
+  return Math.round(n * 100) / 100;
+}
+
+function round4(n) {
+  if (!Number.isFinite(n)) return NaN;
+  return Math.round(n * 10000) / 10000;
 }
 
 function renderDeviationCharts(data) {
@@ -721,6 +866,20 @@ function parseCsv(text) {
     rows,
     hasMonthColumn: headers.includes("Alder_mdr")
   };
+}
+
+function getImportLineInfo(text) {
+  const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
+  if (!lines.length) {
+    return { dataLineCount: 0 };
+  }
+
+  const delimiter = detectDelimiter(lines[0]);
+  const firstCols = splitCsvLine(lines[0], delimiter).map((col) => col.trim());
+  const hasHeader = firstCols.includes("DPU") && firstCols.includes("Alder_år");
+  const dataLineCount = hasHeader ? Math.max(0, lines.length - 1) : lines.length;
+
+  return { dataLineCount };
 }
 
 function detectDelimiter(line) {
