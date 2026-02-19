@@ -19,6 +19,8 @@ const COLORS = ["#2563eb", "#dc2626", "#059669", "#7c3aed", "#d97706", "#0891b2"
 const COLOR_CLASS = COLORS.map((_, idx) => `series-color-${idx}`);
 const DEFAULT_DPU = 2;
 const LEGACY_STORAGE_KEYS = ["dpu_client_only_state_v1", "dpu_state", "dpu_data"];
+const CI_LEVEL = 0.8;
+const CI_LABEL = `${Math.round(CI_LEVEL * 100)}% CI`;
 
 let state = { numDpu: DEFAULT_DPU, rows: makeDefaultRows(DEFAULT_DPU) };
 
@@ -261,14 +263,18 @@ function std(values) {
   return Math.sqrt(variance);
 }
 
-function tCritical95(df) {
-  const table = { 1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228, 11: 2.201, 12: 2.179, 13: 2.16, 14: 2.145, 15: 2.131, 16: 2.12, 17: 2.11, 18: 2.101, 19: 2.093, 20: 2.086, 21: 2.08, 22: 2.074, 23: 2.069, 24: 2.064, 25: 2.06, 26: 2.056, 27: 2.052, 28: 2.048, 29: 2.045, 30: 2.042 };
+function tCritical(df, confidence = CI_LEVEL) {
   if (df <= 0) return NaN;
+
+  const table95 = { 1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228, 11: 2.201, 12: 2.179, 13: 2.16, 14: 2.145, 15: 2.131, 16: 2.12, 17: 2.11, 18: 2.101, 19: 2.093, 20: 2.086, 21: 2.08, 22: 2.074, 23: 2.069, 24: 2.064, 25: 2.06, 26: 2.056, 27: 2.052, 28: 2.048, 29: 2.045, 30: 2.042 };
+  const table80 = { 1: 3.078, 2: 1.886, 3: 1.638, 4: 1.533, 5: 1.476, 6: 1.44, 7: 1.415, 8: 1.397, 9: 1.383, 10: 1.372, 11: 1.363, 12: 1.356, 13: 1.35, 14: 1.345, 15: 1.341, 16: 1.337, 17: 1.333, 18: 1.33, 19: 1.328, 20: 1.325, 21: 1.323, 22: 1.321, 23: 1.319, 24: 1.318, 25: 1.316, 26: 1.315, 27: 1.314, 28: 1.313, 29: 1.311, 30: 1.31 };
+
+  const table = confidence <= 0.8 ? table80 : table95;
   if (table[df]) return table[df];
-  return 1.96;
+  return confidence <= 0.8 ? 1.282 : 1.96;
 }
 
-function meanCi95(values) {
+function meanCi(values, confidence = CI_LEVEL) {
   const clean = values.filter((v) => Number.isFinite(v));
   const n = clean.length;
   if (!n) return { n: 0, mean: NaN, low: NaN, high: NaN };
@@ -276,7 +282,7 @@ function meanCi95(values) {
   if (n < 2) return { n, mean: m, low: NaN, high: NaN };
   const s = std(clean);
   const se = s / Math.sqrt(n);
-  const margin = tCritical95(n - 1) * se;
+  const margin = tCritical(n - 1, confidence) * se;
   return { n, mean: m, low: m - margin, high: m + margin };
 }
 
@@ -511,11 +517,12 @@ function renderStats(data) {
   renderDeviationSummaries(data);
   renderDeviationCharts(data);
   renderAgeCiSummary(data);
+  renderEstimatedAgeAtLastMeasurement(data);
   renderWilcoxonSection(data);
 
   const dpuRows = data.map((row) => {
     const values = SCALE_NAMES.map((s) => row[`Afvigelse_mdr_${s}`]);
-    const ci = meanCi95(values);
+    const ci = meanCi(values);
     return {
       Name: row.DPU,
       N: ci.n,
@@ -527,7 +534,7 @@ function renderStats(data) {
 
   const scaleRows = SCALE_NAMES.map((scale) => {
     const values = data.map((row) => row[`Afvigelse_mdr_${scale}`]);
-    const ci = meanCi95(values);
+    const ci = meanCi(values);
     return {
       Name: scale,
       N: ci.n,
@@ -943,27 +950,63 @@ function renderAgeCiSummary(data) {
   const kronoValues = data.map((row) => row.Krono_mdr);
   const devMeanValues = data.map((row) => row.Udviklingsalder_mdr_gns);
 
-  const kronoCi = meanCi95(kronoValues);
-  const devCi = meanCi95(devMeanValues);
+  const kronoCi = meanCi(kronoValues);
+  const devCi = meanCi(devMeanValues);
 
   const rows = [
     {
       Mål: "Kronologisk alder (mdr)",
       n: kronoCi.n,
       "Gennemsnit (mdr)": kronoCi.mean,
-      "95% CI lav": kronoCi.low,
-      "95% CI høj": kronoCi.high
+      [`${CI_LABEL} lav`]: kronoCi.low,
+      [`${CI_LABEL} høj`]: kronoCi.high
     },
     {
       Mål: "DPU-gennemsnitsalder (mdr)",
       n: devCi.n,
       "Gennemsnit (mdr)": devCi.mean,
-      "95% CI lav": devCi.low,
-      "95% CI høj": devCi.high
+      [`${CI_LABEL} lav`]: devCi.low,
+      [`${CI_LABEL} høj`]: devCi.high
     }
   ];
 
-  renderGenericTable(ageCiContainer, ["Mål", "n", "Gennemsnit (mdr)", "95% CI lav", "95% CI høj"], rows);
+  renderGenericTable(ageCiContainer, ["Mål", "n", "Gennemsnit (mdr)", `${CI_LABEL} lav`, `${CI_LABEL} høj`], rows);
+}
+
+function renderEstimatedAgeAtLastMeasurement(data) {
+  const container = document.getElementById("estimatedLastAgeSummary");
+  if (!container) return;
+  if (!data.length) {
+    container.innerHTML = "<p class='small'>Ingen data.</p>";
+    return;
+  }
+
+  const sorted = [...data].sort((a, b) => a.Krono_mdr - b.Krono_mdr);
+  const last = sorted[sorted.length - 1];
+
+  const rows = SCALE_NAMES.map((scale) => {
+    const deviationValues = data.map((row) => row[`Afvigelse_mdr_${scale}`]);
+    const ci = meanCi(deviationValues);
+    return {
+      Skala: scale,
+      "Sidste kronologiske alder (mdr)": last.Krono_mdr,
+      "Estimeret alder (mdr)": last.Krono_mdr + ci.mean,
+      [`${CI_LABEL} lav (mdr)`]: Number.isFinite(ci.low) ? last.Krono_mdr + ci.low : NaN,
+      [`${CI_LABEL} høj (mdr)`]: Number.isFinite(ci.high) ? last.Krono_mdr + ci.high : NaN
+    };
+  });
+
+  renderGenericTable(
+    container,
+    [
+      "Skala",
+      "Sidste kronologiske alder (mdr)",
+      "Estimeret alder (mdr)",
+      `${CI_LABEL} lav (mdr)`,
+      `${CI_LABEL} høj (mdr)`
+    ],
+    rows
+  );
 }
 
 function renderGenericTable(container, headers, rows, options = {}) {
