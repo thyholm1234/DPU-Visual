@@ -273,11 +273,14 @@ function renderInputTable() {
   const tbody = document.createElement("tbody");
   rows.forEach((row, rIdx) => {
     const tr = document.createElement("tr");
-    headers.forEach((h) => {
+    headers.forEach((h, cIdx) => {
       const td = document.createElement("td");
       const input = document.createElement("input");
       input.type = "text";
-      const safeHeader = h.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
+      let safeHeader = h.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
+      if (!safeHeader) {
+        safeHeader = `col_${cIdx}`;
+      }
       input.name = `dpu_${rIdx}_${safeHeader}`;
       input.id = `dpu_${rIdx}_${safeHeader}`;
       input.autocomplete = "off";
