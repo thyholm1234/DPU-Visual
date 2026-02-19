@@ -578,26 +578,22 @@ function renderWilcoxonSection(data) {
 
     return {
       Skala: scale,
-      Parring: pairingLabel,
-      "n (par)": result.nPairs,
-      "n effektive": result.nEffective,
-      "Median Δ (mdr)": result.medianDelta,
-      "Mean Δ (mdr)": result.meanDelta,
-      "Hældning (mdr/mdr)": trend.slope,
       "Hældning (mdr/år)": trend.slopePerYear,
       "Line-fit r": trend.r,
       "Line-fit R²": trend.rSquared,
-      "Fit niveau": fitMagnitudeLabel(trend.rSquared),
-      "Rank-biserial r": result.rankBiserial,
-      SRM: result.srm,
-      "Effekt niveau": interpretation
+      "Fit niveau": fitMagnitudeLabel(trend.rSquared)
     };
   });
 
   renderGenericTable(
     container,
-    ["Skala", "Parring", "n (par)", "n effektive", "Median Δ (mdr)", "Mean Δ (mdr)", "Hældning (mdr/mdr)", "Hældning (mdr/år)", "Line-fit r", "Line-fit R²", "Fit niveau", "Rank-biserial r", "SRM", "Effekt niveau"],
-    rows
+    ["Skala", "Hældning (mdr/år)", "Line-fit r", "Line-fit R²", "Fit niveau"],
+    rows,
+    {
+      valueStyles: {
+        "Hældning (mdr/år)": (value) => ({ color: slopeYearColor(value), fontWeight: "700" })
+      }
+    }
   );
 }
 
@@ -787,6 +783,43 @@ function fitMagnitudeLabel(rSquared) {
   return "Høj";
 }
 
+function slopeYearColor(value) {
+  if (!Number.isFinite(value)) return "#111111";
+  if (value <= 0.3) return "#d62828";
+
+  if (value <= 0.5) {
+    const ratio = (value - 0.3) / 0.2;
+    return interpolateColor("#d62828", "#f59e0b", ratio);
+  }
+
+  if (value <= 0.75) {
+    const ratio = (value - 0.5) / 0.25;
+    return interpolateColor("#f59e0b", "#111111", ratio);
+  }
+
+  return "#111111";
+}
+
+function interpolateColor(startHex, endHex, ratio) {
+  const clamped = Math.max(0, Math.min(1, ratio));
+  const start = hexToRgb(startHex);
+  const end = hexToRgb(endHex);
+  const r = Math.round(start.r + (end.r - start.r) * clamped);
+  const g = Math.round(start.g + (end.g - start.g) * clamped);
+  const b = Math.round(start.b + (end.b - start.b) * clamped);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+function hexToRgb(hex) {
+  const clean = hex.replace("#", "");
+  const value = Number.parseInt(clean, 16);
+  return {
+    r: (value >> 16) & 255,
+    g: (value >> 8) & 255,
+    b: value & 255
+  };
+}
+
 function median(values) {
   const clean = values.filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
   if (!clean.length) return NaN;
@@ -933,7 +966,7 @@ function renderAgeCiSummary(data) {
   renderGenericTable(ageCiContainer, ["Mål", "n", "Gennemsnit (mdr)", "95% CI lav", "95% CI høj"], rows);
 }
 
-function renderGenericTable(container, headers, rows) {
+function renderGenericTable(container, headers, rows, options = {}) {
   const table = document.createElement("table");
   const thead = document.createElement("thead");
   const trHead = document.createElement("tr");
@@ -958,6 +991,17 @@ function renderGenericTable(container, headers, rows) {
       } else {
         td.textContent = fmt(value);
       }
+
+      const styleFn = options.valueStyles?.[header];
+      if (typeof styleFn === "function") {
+        const styleMap = styleFn(value);
+        if (styleMap && typeof styleMap === "object") {
+          Object.entries(styleMap).forEach(([key, styleValue]) => {
+            td.style[key] = String(styleValue);
+          });
+        }
+      }
+
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
