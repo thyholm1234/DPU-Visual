@@ -293,6 +293,20 @@ th {
   margin-bottom: 0;
 }
 
+.pdf-render-host {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 1160px;
+  background: #ffffff;
+  z-index: -1;
+}
+
+.pdf-render-root {
+  max-width: 1160px;
+  padding: 0;
+}
+
 @media (max-width: 760px) {
   .container {
     padding: 0.9rem 0.75rem 1.25rem;

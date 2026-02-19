@@ -145,14 +145,65 @@ exportCsvEl.addEventListener("click", () => {
   URL.revokeObjectURL(url);
 });
 
-exportPdfEl.addEventListener("click", () => {
-  rerender();
-  window.requestAnimationFrame(() => {
-    setTimeout(() => {
-      window.print();
-    }, 50);
-  });
+exportPdfEl.addEventListener("click", async () => {
+  await exportReportPdf();
 });
+
+async function exportReportPdf() {
+  const JsPdfCtor = window.jspdf?.jsPDF;
+  if (typeof JsPdfCtor !== "function" || typeof window.html2canvas !== "function") {
+    window.alert("PDF-biblioteker kunne ikke indlæses. Prøv at genindlæse siden.");
+    return;
+  }
+
+  const source = document.querySelector("main.container");
+  if (!source) return;
+
+  const originalLabel = exportPdfEl.textContent;
+  exportPdfEl.disabled = true;
+  exportPdfEl.textContent = "Genererer PDF...";
+
+  rerender();
+  await new Promise((resolve) => window.requestAnimationFrame(resolve));
+
+  const renderHost = document.createElement("div");
+  renderHost.className = "pdf-render-host";
+
+  const clone = source.cloneNode(true);
+  clone.classList.add("pdf-render-root");
+  clone.querySelectorAll(".no-print").forEach((el) => el.remove());
+  renderHost.appendChild(clone);
+  document.body.appendChild(renderHost);
+
+  try {
+    const pdf = new JsPdfCtor({
+      orientation: "p",
+      unit: "pt",
+      format: "a4",
+      compress: true
+    });
+
+    await new Promise((resolve) => {
+      pdf.html(clone, {
+        margin: [24, 20, 24, 20],
+        autoPaging: "text",
+        html2canvas: {
+          scale: 1.15,
+          useCORS: true,
+          backgroundColor: "#ffffff"
+        },
+        callback: () => resolve()
+      });
+    });
+
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-");
+    pdf.save(`dpu_rapport_${timestamp}.pdf`);
+  } finally {
+    renderHost.remove();
+    exportPdfEl.disabled = false;
+    exportPdfEl.textContent = originalLabel;
+  }
+}
 
 function makeDefaultRows(count) {
   return Array.from({ length: count }, (_, i) => {
