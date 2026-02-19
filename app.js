@@ -18,8 +18,11 @@ const SCORE_TO_MONTHS = {
 const COLORS = ["#2563eb", "#dc2626", "#059669", "#7c3aed", "#d97706", "#0891b2", "#be185d", "#334155"];
 const COLOR_CLASS = COLORS.map((_, idx) => `series-color-${idx}`);
 const DEFAULT_DPU = 2;
+const LEGACY_STORAGE_KEYS = ["dpu_client_only_state_v1", "dpu_state", "dpu_data"];
 
 let state = { numDpu: DEFAULT_DPU, rows: makeDefaultRows(DEFAULT_DPU) };
+
+clearLegacyBrowserStorage();
 
 const numDpuEl = document.getElementById("numDpu");
 const inputTableEl = document.getElementById("inputTable");
@@ -142,6 +145,24 @@ function makeDefaultRows(count) {
     });
     return row;
   });
+}
+
+function clearLegacyBrowserStorage() {
+  try {
+    LEGACY_STORAGE_KEYS.forEach((key) => {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    });
+
+    Object.keys(localStorage)
+      .filter((key) => key.toLowerCase().startsWith("dpu_"))
+      .forEach((key) => localStorage.removeItem(key));
+
+    Object.keys(sessionStorage)
+      .filter((key) => key.toLowerCase().startsWith("dpu_"))
+      .forEach((key) => sessionStorage.removeItem(key));
+  } catch {
+  }
 }
 
 function resetState() {
@@ -525,13 +546,19 @@ function renderWilcoxonSection(data) {
   if (!container) return;
 
   const yearPairs = buildYearToYearPairs(data);
-  if (!yearPairs.length) {
-    container.innerHTML = "<p class='small'>Ingen år-til-år par fundet (kræver mindst to målinger med ca. 12 måneders afstand).</p>";
+  const adjacentPairs = buildAdjacentPairs(data);
+  const usedPairs = yearPairs.length > 0 ? yearPairs : adjacentPairs;
+  const pairingLabel = yearPairs.length > 0
+    ? "Parring: 12±6 mdr (år-til-år)"
+    : "Parring: nabomålinger (fallback)";
+
+  if (!usedPairs.length) {
+    container.innerHTML = "<p class='small'>Ingen par fundet til Wilcoxon-test (kræver mindst to målinger).</p>";
     return;
   }
 
   const rows = SCALE_NAMES.map((scale) => {
-    const deltas = yearPairs.map((pair) => pair.to[scale] - pair.from[scale]);
+    const deltas = usedPairs.map((pair) => pair.to[scale] - pair.from[scale]);
     const result = wilcoxonSignedRank(deltas);
 
     let interpretation = "Ikke nok data";
@@ -541,6 +568,7 @@ function renderWilcoxonSection(data) {
 
     return {
       Skala: scale,
+      Parring: pairingLabel,
       "n (par)": result.n,
       "Median Δ score": result.medianDelta,
       "W": result.wStatistic,
@@ -552,7 +580,7 @@ function renderWilcoxonSection(data) {
 
   renderGenericTable(
     container,
-    ["Skala", "n (par)", "Median Δ score", "W", "z", "p (to-sidet)", "Vurdering"],
+    ["Skala", "Parring", "n (par)", "Median Δ score", "W", "z", "p (to-sidet)", "Vurdering"],
     rows
   );
 }
@@ -564,9 +592,18 @@ function buildYearToYearPairs(data) {
     const prev = sorted[i - 1];
     const curr = sorted[i];
     const monthDiff = curr.Krono_mdr - prev.Krono_mdr;
-    if (monthDiff >= 9 && monthDiff <= 15) {
+    if (monthDiff >= 6 && monthDiff <= 18) {
       pairs.push({ from: prev, to: curr });
     }
+  }
+  return pairs;
+}
+
+function buildAdjacentPairs(data) {
+  const sorted = [...data].sort((a, b) => a.Krono_mdr - b.Krono_mdr);
+  const pairs = [];
+  for (let i = 1; i < sorted.length; i += 1) {
+    pairs.push({ from: sorted[i - 1], to: sorted[i] });
   }
   return pairs;
 }
