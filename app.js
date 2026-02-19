@@ -18,7 +18,7 @@ const SCORE_TO_MONTHS = {
 const COLORS = ["#2563eb", "#dc2626", "#059669", "#7c3aed", "#d97706", "#0891b2", "#be185d", "#334155"];
 const COLOR_CLASS = COLORS.map((_, idx) => `series-color-${idx}`);
 
-let state = { numDpu: 5, rows: makeDefaultRows(5) };
+let state = { numDpu: 3,rows: makeDefaultRows(5) };
 
 const numDpuEl = document.getElementById("numDpu");
 const inputTableEl = document.getElementById("inputTable");
