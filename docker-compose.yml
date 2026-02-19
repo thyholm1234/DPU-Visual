@@ -2,6 +2,6 @@ services:
   dpu-client:
     build: .
     ports:
-      - "${PORT:-8158}:${PORT:-8073}"
-    command: ["python", "-m", "http.server", "${PORT:-8073}"]
+      - "${PORT:-8154}:${PORT:-8154}"
+    command: ["python", "-m", "http.server", "${PORT:-8154}"]
     restart: unless-stopped
