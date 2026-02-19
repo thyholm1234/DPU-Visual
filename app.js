@@ -518,6 +518,7 @@ function renderStats(data) {
   renderDeviationCharts(data);
   renderAgeCiSummary(data);
   renderEstimatedAgeAtLastMeasurement(data);
+  renderLastDpuCiReferenceChart(data);
   renderWilcoxonSection(data);
 
   const dpuRows = data.map((row) => {
@@ -546,6 +547,111 @@ function renderStats(data) {
 
   renderStatsTable(document.getElementById("statsDpu"), dpuRows, "DPU");
   renderStatsTable(document.getElementById("statsScale"), scaleRows, "Skala");
+}
+
+function renderLastDpuCiReferenceChart(data) {
+  const container = document.getElementById("lastDpuCiReferenceChart");
+  if (!container) return;
+  if (!data.length) {
+    container.innerHTML = "<p class='small'>Ingen data.</p>";
+    return;
+  }
+
+  const sorted = [...data].sort((a, b) => a.Krono_mdr - b.Krono_mdr);
+  const last = sorted[sorted.length - 1];
+  const refAge = last.Krono_mdr;
+
+  const totalCi = meanCi(data.map((row) => row.Afvigelse_mdr_gns));
+  const entries = [
+    {
+      label: "Total (gns)",
+      meanAge: refAge + totalCi.mean,
+      lowAge: Number.isFinite(totalCi.low) ? refAge + totalCi.low : NaN,
+      highAge: Number.isFinite(totalCi.high) ? refAge + totalCi.high : NaN,
+      observedAge: last.Udviklingsalder_mdr_gns
+    }
+  ];
+
+  SCALE_NAMES.forEach((scale) => {
+    const ci = meanCi(data.map((row) => row[`Afvigelse_mdr_${scale}`]));
+    entries.push({
+      label: scale,
+      meanAge: refAge + ci.mean,
+      lowAge: Number.isFinite(ci.low) ? refAge + ci.low : NaN,
+      highAge: Number.isFinite(ci.high) ? refAge + ci.high : NaN,
+      observedAge: last[`Udviklingsalder_mdr_${scale}`]
+    });
+  });
+
+  const allValues = entries.flatMap((entry) => [entry.lowAge, entry.highAge, entry.meanAge, entry.observedAge, refAge])
+    .filter((v) => Number.isFinite(v));
+
+  if (!allValues.length) {
+    container.innerHTML = "<p class='small'>Ingen CI-data tilgængelig.</p>";
+    return;
+  }
+
+  const width = Math.max(620, container.clientWidth || 960);
+  const rowHeight = 30;
+  const topPad = 36;
+  const bottomPad = 34;
+  const leftPad = 220;
+  const rightPad = 28;
+  const height = topPad + bottomPad + entries.length * rowHeight;
+  const plotW = width - leftPad - rightPad;
+
+  let minX = Math.min(...allValues);
+  let maxX = Math.max(...allValues);
+  if (minX === maxX) maxX = minX + 1;
+  const pad = Math.max(2, Math.round((maxX - minX) * 0.08));
+  minX -= pad;
+  maxX += pad;
+
+  const xPos = (value) => leftPad + ((value - minX) / (maxX - minX)) * plotW;
+  const yPos = (idx) => topPad + idx * rowHeight + rowHeight / 2;
+
+  const ticks = 6;
+  let svg = `<svg class='chart-svg' viewBox='0 0 ${width} ${height}' width='100%' height='${height}'>`;
+  svg += `<rect x='${leftPad}' y='${topPad - 12}' width='${plotW}' height='${entries.length * rowHeight + 8}' fill='#ffffff' stroke='#eef2f8'/>`;
+
+  for (let t = 0; t <= ticks; t += 1) {
+    const xVal = minX + ((maxX - minX) * t) / ticks;
+    const x = xPos(xVal);
+    svg += `<line x1='${x}' y1='${topPad - 12}' x2='${x}' y2='${topPad + entries.length * rowHeight - 4}' stroke='#edf1f7'/>`;
+    svg += `<text x='${x}' y='${height - 12}' text-anchor='middle' font-size='10' fill='#6b7280'>${xVal.toFixed(1).replace('.', ',')}</text>`;
+  }
+
+  const refX = xPos(refAge);
+  svg += `<line x1='${refX}' y1='${topPad - 14}' x2='${refX}' y2='${topPad + entries.length * rowHeight - 2}' stroke='#111111' stroke-width='1.5'/>`;
+  svg += `<text x='${refX + 6}' y='${topPad - 18}' font-size='10' fill='#111111'>Kronologisk alder (${fmt(refAge)} mdr)</text>`;
+
+  entries.forEach((entry, idx) => {
+    const y = yPos(idx);
+    svg += `<text x='${leftPad - 10}' y='${y + 4}' text-anchor='end' font-size='11' fill='#31333f'>${escapeXml(entry.label)}</text>`;
+
+    if (Number.isFinite(entry.lowAge) && Number.isFinite(entry.highAge)) {
+      svg += `<line x1='${xPos(entry.lowAge)}' y1='${y}' x2='${xPos(entry.highAge)}' y2='${y}' stroke='#1f2937' stroke-width='2'/>`;
+      svg += `<line x1='${xPos(entry.lowAge)}' y1='${y - 5}' x2='${xPos(entry.lowAge)}' y2='${y + 5}' stroke='#1f2937'/>`;
+      svg += `<line x1='${xPos(entry.highAge)}' y1='${y - 5}' x2='${xPos(entry.highAge)}' y2='${y + 5}' stroke='#1f2937'/>`;
+    }
+
+    if (Number.isFinite(entry.meanAge)) {
+      svg += `<circle cx='${xPos(entry.meanAge)}' cy='${y}' r='4.5' fill='#2563eb'><title>Estimeret alder: ${fmt(entry.meanAge)} mdr</title></circle>`;
+    }
+
+    if (Number.isFinite(entry.observedAge)) {
+      svg += `<circle cx='${xPos(entry.observedAge)}' cy='${y}' r='3' fill='#d97706'><title>Observeret sidste DPU: ${fmt(entry.observedAge)} mdr</title></circle>`;
+    }
+  });
+
+  svg += "</svg>";
+
+  container.innerHTML = `
+    <div class='chart-shell'>
+      <div class='small'>Blå punkt = estimeret alder fra afvigelsesmiddel. Linje = ${CI_LABEL}. Orange punkt = observeret alder ved sidste DPU.</div>
+      ${svg}
+    </div>
+  `;
 }
 
 function renderWilcoxonSection(data) {
