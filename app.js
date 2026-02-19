@@ -18,9 +18,11 @@ const SCORE_TO_MONTHS = {
 const COLORS = ["#2563eb", "#dc2626", "#059669", "#7c3aed", "#d97706", "#0891b2", "#be185d", "#334155"];
 const COLOR_CLASS = COLORS.map((_, idx) => `series-color-${idx}`);
 const DEFAULT_DPU = 2;
+const PDF_RENDER_WIDTH = 1160;
 const LEGACY_STORAGE_KEYS = ["dpu_client_only_state_v1", "dpu_state", "dpu_data"];
 const CI_LEVEL = 0.8;
 const CI_LABEL = `${Math.round(CI_LEVEL * 100)}% CI`;
+let chartRenderWidthOverride = null;
 
 let state = { numDpu: DEFAULT_DPU, rows: makeDefaultRows(DEFAULT_DPU) };
 
@@ -163,6 +165,7 @@ async function exportReportPdf() {
   exportPdfEl.disabled = true;
   exportPdfEl.textContent = "Genererer PDF...";
 
+  chartRenderWidthOverride = PDF_RENDER_WIDTH;
   rerender();
   await new Promise((resolve) => window.requestAnimationFrame(resolve));
 
@@ -171,6 +174,7 @@ async function exportReportPdf() {
 
   const clone = source.cloneNode(true);
   clone.classList.add("pdf-render-root");
+  clone.style.width = `${PDF_RENDER_WIDTH}px`;
   clone.querySelectorAll(".no-print").forEach((el) => el.remove());
   renderHost.appendChild(clone);
   document.body.appendChild(renderHost);
@@ -182,15 +186,19 @@ async function exportReportPdf() {
       format: "a4",
       compress: true
     });
+    const pageWidth = pdf.internal.pageSize.getWidth() - 40;
 
     await new Promise((resolve) => {
       pdf.html(clone, {
         margin: [24, 20, 24, 20],
+        width: pageWidth,
+        windowWidth: PDF_RENDER_WIDTH,
         autoPaging: "text",
         html2canvas: {
           scale: 1.15,
           useCORS: true,
-          backgroundColor: "#ffffff"
+          backgroundColor: "#ffffff",
+          windowWidth: PDF_RENDER_WIDTH
         },
         callback: () => resolve()
       });
@@ -199,6 +207,8 @@ async function exportReportPdf() {
     const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-");
     pdf.save(`dpu_rapport_${timestamp}.pdf`);
   } finally {
+    chartRenderWidthOverride = null;
+    rerender();
     renderHost.remove();
     exportPdfEl.disabled = false;
     exportPdfEl.textContent = originalLabel;
@@ -499,7 +509,7 @@ function renderCharts(data) {
 
 function renderLineChart(container, labels, series, yLabel, options = {}) {
   const zeroLine = Object.prototype.hasOwnProperty.call(options, "zeroLine") ? options.zeroLine : null;
-  const width = Math.max(360, container.clientWidth || container.parentElement?.clientWidth || 900);
+  const width = Math.max(360, chartRenderWidthOverride || container.clientWidth || container.parentElement?.clientWidth || 900);
   const height = options.height || 300;
   const hasLongLabels = labels.some((label) => String(label).length > 14);
   const margin = { top: 18, right: 20, bottom: hasLongLabels ? 88 : 58, left: 56 };
