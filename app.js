@@ -65,12 +65,17 @@ applyPasteEl.addEventListener("click", () => {
     const cols = line.split("\t");
     if (!cols.length) return;
 
+    const hasMonthColumn = cols.length - 3 >= SCALE_NAMES.length;
+    const scoreStartIndex = hasMonthColumn ? 3 : 2;
+
     if (cols[0] !== undefined && cols[0].trim()) rows[rowIdx].DPU = cols[0].trim();
     if (cols[1] !== undefined) rows[rowIdx].Alder_år = clampInt(parseLocaleNumber(cols[1], rows[rowIdx].Alder_år), 0, 18);
-    if (cols[2] !== undefined) rows[rowIdx].Alder_mdr = clampInt(parseLocaleNumber(cols[2], rows[rowIdx].Alder_mdr), 0, 11);
+    if (hasMonthColumn && cols[2] !== undefined) {
+      rows[rowIdx].Alder_mdr = clampInt(parseLocaleNumber(cols[2], rows[rowIdx].Alder_mdr), 0, 11);
+    }
 
     SCALE_NAMES.forEach((scale, idx) => {
-      const colIdx = idx + 3;
+      const colIdx = idx + scoreStartIndex;
       if (cols[colIdx] !== undefined) {
         rows[rowIdx][scale] = clamp(parseLocaleNumber(cols[colIdx], rows[rowIdx][scale]), 1, 14);
       }
@@ -533,20 +538,12 @@ function renderStats(data) {
     };
   });
 
-  const scaleRows = SCALE_NAMES.map((scale) => {
-    const values = data.map((row) => row[`Afvigelse_mdr_${scale}`]);
-    const ci = meanCi(values);
-    return {
-      Name: scale,
-      N: ci.n,
-      Mean: ci.mean,
-      Low: ci.low,
-      High: ci.high
-    };
-  });
-
   renderStatsTable(document.getElementById("statsDpu"), dpuRows, "DPU");
-  renderStatsTable(document.getElementById("statsScale"), scaleRows, "Skala");
+  renderGenericTable(
+    document.getElementById("statsScale"),
+    ["Skala", "n", "Gns afvigelse (mdr)", "Min afvigelse (mdr)", "Max afvigelse (mdr)", "95% CI lav", "95% CI høj"],
+    buildScaleDeviationSummaryRows(data)
+  );
 }
 
 function renderLastDpuCiReferenceChart(data) {
@@ -1025,30 +1022,31 @@ function renderDeviationCharts(data) {
 function renderDeviationSummaries(data) {
   const byDpuContainer = document.getElementById("deviationSummaryByDpu");
   const byScaleContainer = document.getElementById("deviationSummaryByScale");
+  if (byDpuContainer) {
+    byDpuContainer.innerHTML = "";
+  }
 
-  const headers = ["DPU", "Afvigelse total (mdr)", ...SCALE_NAMES.map((s) => `Afvigelse ${s}`)];
-  const rows = data.map((row) => {
-    const record = {
-      DPU: row.DPU,
-      "Afvigelse total (mdr)": row.Afvigelse_mdr_gns
-    };
-    SCALE_NAMES.forEach((scale) => {
-      record[`Afvigelse ${scale}`] = row[`Afvigelse_mdr_${scale}`];
-    });
-    return record;
-  });
-  renderGenericTable(byDpuContainer, headers, rows);
+  renderGenericTable(
+    byScaleContainer,
+    ["Skala", "n", "Gns afvigelse (mdr)", "Min afvigelse (mdr)", "Max afvigelse (mdr)", "95% CI lav", "95% CI høj"],
+    buildScaleDeviationSummaryRows(data)
+  );
+}
 
-  const byScaleRows = SCALE_NAMES.map((scale) => {
+function buildScaleDeviationSummaryRows(data) {
+  return SCALE_NAMES.map((scale) => {
     const values = data.map((row) => row[`Afvigelse_mdr_${scale}`]).filter((v) => Number.isFinite(v));
+    const ci = meanCi(values);
     return {
       Skala: scale,
-      "Gns afvigelse (mdr)": mean(values),
+      n: ci.n,
+      "Gns afvigelse (mdr)": ci.mean,
       "Min afvigelse (mdr)": values.length ? Math.min(...values) : NaN,
-      "Max afvigelse (mdr)": values.length ? Math.max(...values) : NaN
+      "Max afvigelse (mdr)": values.length ? Math.max(...values) : NaN,
+      "95% CI lav": ci.low,
+      "95% CI høj": ci.high
     };
   });
-  renderGenericTable(byScaleContainer, ["Skala", "Gns afvigelse (mdr)", "Min afvigelse (mdr)", "Max afvigelse (mdr)"], byScaleRows);
 }
 
 function renderAgeCiSummary(data) {
