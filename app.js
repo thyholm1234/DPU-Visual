@@ -17,8 +17,9 @@ const SCORE_TO_MONTHS = {
 
 const COLORS = ["#2563eb", "#dc2626", "#059669", "#7c3aed", "#d97706", "#0891b2", "#be185d", "#334155"];
 const COLOR_CLASS = COLORS.map((_, idx) => `series-color-${idx}`);
+const DEFAULT_DPU = 2;
 
-let state = { numDpu: 2, rows: makeDefaultRows(2) };
+let state = { numDpu: DEFAULT_DPU, rows: makeDefaultRows(DEFAULT_DPU) };
 
 const numDpuEl = document.getElementById("numDpu");
 const inputTableEl = document.getElementById("inputTable");
@@ -30,16 +31,22 @@ const applyPasteEl = document.getElementById("applyPaste");
 const pasteAreaEl = document.getElementById("pasteArea");
 
 numDpuEl.value = String(state.numDpu);
+numDpuEl.setAttribute("autocomplete", "off");
+pasteAreaEl.setAttribute("autocomplete", "off");
+
+window.addEventListener("pageshow", () => {
+  resetState();
+});
 
 numDpuEl.addEventListener("change", () => {
-  const value = Math.max(2, parseInt(numDpuEl.value, 10) || 2);
+  const value = Math.max(DEFAULT_DPU, parseInt(numDpuEl.value, 10) || DEFAULT_DPU);
   state.numDpu = value;
   state.rows = normalizeRows(state.rows, value);
   rerender();
 });
 
 resetBtnEl.addEventListener("click", () => {
-  const value = Math.max(2, Number(numDpuEl.value) || 2);
+  const value = Math.max(DEFAULT_DPU, Number(numDpuEl.value) || DEFAULT_DPU);
   state = { numDpu: value, rows: makeDefaultRows(value) };
   rerender();
 });
@@ -127,6 +134,13 @@ function makeDefaultRows(count) {
     });
     return row;
   });
+}
+
+function resetState() {
+  state = { numDpu: DEFAULT_DPU, rows: makeDefaultRows(DEFAULT_DPU) };
+  numDpuEl.value = String(DEFAULT_DPU);
+  pasteAreaEl.value = "";
+  rerender();
 }
 
 function normalizeRows(rows, count) {
@@ -263,6 +277,7 @@ function renderInputTable() {
       const td = document.createElement("td");
       const input = document.createElement("input");
       input.type = "text";
+      input.autocomplete = "off";
       const value = row[h];
       input.value = typeof value === "number" ? String(value).replace(".", ",") : String(value);
       input.addEventListener("change", () => {
