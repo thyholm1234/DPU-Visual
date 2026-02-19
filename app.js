@@ -667,7 +667,20 @@ function renderWilcoxonSection(data) {
     return;
   }
 
-  const rows = SCALE_NAMES.map((scale) => {
+  const totalTrend = linearTrend(
+    data.map((row) => row.Krono_mdr),
+    data.map((row) => row.Udviklingsalder_mdr_gns)
+  );
+
+  const rows = [
+    {
+      Skala: "Hele skalaen",
+      "Hældning (mdr/år)": totalTrend.slopePerYear,
+      "Line-fit r": totalTrend.r,
+      "Line-fit R²": totalTrend.rSquared,
+      "Fit niveau": fitMagnitudeLabel(totalTrend.rSquared)
+    },
+    ...SCALE_NAMES.map((scale) => {
     const deltas = usedPairs.map(
       (pair) => pair.to[`Udviklingsalder_mdr_${scale}`] - pair.from[`Udviklingsalder_mdr_${scale}`]
     );
@@ -693,7 +706,8 @@ function renderWilcoxonSection(data) {
       "Line-fit R²": trend.rSquared,
       "Fit niveau": fitMagnitudeLabel(trend.rSquared)
     };
-  });
+  })
+  ];
 
   renderGenericTable(
     container,
@@ -1020,17 +1034,15 @@ function renderDeviationCharts(data) {
 }
 
 function renderDeviationSummaries(data) {
+  void data;
   const byDpuContainer = document.getElementById("deviationSummaryByDpu");
   const byScaleContainer = document.getElementById("deviationSummaryByScale");
   if (byDpuContainer) {
     byDpuContainer.innerHTML = "";
   }
-
-  renderGenericTable(
-    byScaleContainer,
-    ["Skala", "n", "Gns afvigelse (mdr)", "Min afvigelse (mdr)", "Max afvigelse (mdr)", "95% CI lav", "95% CI høj"],
-    buildScaleDeviationSummaryRows(data)
-  );
+  if (byScaleContainer) {
+    byScaleContainer.innerHTML = "";
+  }
 }
 
 function buildScaleDeviationSummaryRows(data) {
