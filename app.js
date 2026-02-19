@@ -565,26 +565,26 @@ function renderWilcoxonSection(data) {
 
     let interpretation = "Ikke nok data";
     if (result.allZero) {
-      interpretation = "Ingen ændring (alle Δ=0)";
-    } else if (Number.isFinite(result.pValue)) {
-      interpretation = result.pValue < 0.05 ? "Signifikant (p < 0,05)" : "Ikke signifikant";
+      interpretation = "Ingen ændring";
+    } else if (Number.isFinite(result.rankBiserial)) {
+      interpretation = effectMagnitudeLabel(result.rankBiserial);
     }
 
     return {
       Skala: scale,
       Parring: pairingLabel,
       "n (par)": result.n,
-      "Median Δ score": result.medianDelta,
-      "W": result.wStatistic,
-      "z": result.zScore,
-      "p (to-sidet)": result.pValue,
-      Vurdering: interpretation
+      "Median Δ (mdr)": result.medianDelta,
+      "Mean Δ (mdr)": result.meanDelta,
+      "Rank-biserial r": result.rankBiserial,
+      SRM: result.srm,
+      "Effekt niveau": interpretation
     };
   });
 
   renderGenericTable(
     container,
-    ["Skala", "Parring", "n (par)", "Median Δ score", "W", "z", "p (to-sidet)", "Vurdering"],
+    ["Skala", "Parring", "n (par)", "Median Δ (mdr)", "Mean Δ (mdr)", "Rank-biserial r", "SRM", "Effekt niveau"],
     rows
   );
 }
@@ -617,14 +617,20 @@ function wilcoxonSignedRank(differences) {
   const clean = finite.filter((d) => d !== 0);
   const n = clean.length;
   const allZero = finite.length >= 2 && n === 0;
+  const meanDelta = round2(mean(finite));
+  const sdDelta = std(finite);
+  const srm = Number.isFinite(sdDelta) && sdDelta > 0 ? round2(mean(finite) / sdDelta) : NaN;
 
   if (allZero) {
     return {
       n: finite.length,
       medianDelta: round2(median(finite)),
+      meanDelta,
       wStatistic: 0,
       zScore: 0,
       pValue: 1,
+      rankBiserial: 0,
+      srm: 0,
       allZero: true
     };
   }
@@ -633,9 +639,12 @@ function wilcoxonSignedRank(differences) {
     return {
       n,
       medianDelta: Number.isFinite(median(differences)) ? round2(median(differences)) : NaN,
+      meanDelta,
       wStatistic: NaN,
       zScore: NaN,
       pValue: NaN,
+      rankBiserial: NaN,
+      srm,
       allZero: false
     };
   }
@@ -669,6 +678,8 @@ function wilcoxonSignedRank(differences) {
   });
 
   const wStatistic = Math.min(wPlus, wMinus);
+  const totalRank = (n * (n + 1)) / 2;
+  const rankBiserial = (wPlus - wMinus) / totalRank;
   const meanW = (n * (n + 1)) / 4;
   const varW = (n * (n + 1) * (2 * n + 1)) / 24;
   const z = (Math.abs(wPlus - meanW) - 0.5) / Math.sqrt(varW);
@@ -677,11 +688,22 @@ function wilcoxonSignedRank(differences) {
   return {
     n,
     medianDelta: round2(median(differences)),
+    meanDelta,
     wStatistic: round2(wStatistic),
     zScore: round2(z),
     pValue: round4(p),
+    rankBiserial: round2(rankBiserial),
+    srm,
     allZero: false
   };
+}
+
+function effectMagnitudeLabel(rankBiserial) {
+  const absValue = Math.abs(rankBiserial);
+  if (absValue < 0.1) return "Triviel";
+  if (absValue < 0.3) return "Lille";
+  if (absValue < 0.5) return "Moderat";
+  return "Stor";
 }
 
 function median(values) {
