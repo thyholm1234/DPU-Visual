@@ -203,6 +203,18 @@ th {
   width: 78px;
 }
 
+.input-spreadsheet td[contenteditable="true"] {
+  min-height: 2.15rem;
+  outline: none;
+  cursor: text;
+  background: #fff;
+}
+
+.input-spreadsheet td[contenteditable="true"]:focus {
+  box-shadow: inset 0 0 0 2px rgba(125, 182, 255, 0.55);
+  background: #f8fbff;
+}
+
 .grid {
   display: grid;
   grid-template-columns: 1fr;

@@ -552,6 +552,7 @@ function round1(n) {
 
 function renderInputTable() {
   const rows = normalizeRows(state.rows, state.numDpu);
+  state.rows = rows;
   const headers = ["DPU", "Alder_år", "Alder_mdr", ...SCALE_NAMES];
   const displayHeaders = [
     "Navn",
@@ -577,34 +578,94 @@ function renderInputTable() {
   table.appendChild(thead);
 
   const tbody = document.createElement("tbody");
+  const updateCellState = (rowIndex, header, rawValue) => {
+    if (!state.rows[rowIndex]) return;
+    const value = String(rawValue ?? "").trim();
+    if (header === "DPU") {
+      state.rows[rowIndex][header] = value || `DPU_${rowIndex + 1}`;
+      return;
+    }
+    if (header === "Alder_år") {
+      state.rows[rowIndex][header] = clampInt(parseLocaleNumber(value, state.rows[rowIndex][header]), 0, 18);
+      return;
+    }
+    if (header === "Alder_mdr") {
+      state.rows[rowIndex][header] = clampInt(parseLocaleNumber(value, state.rows[rowIndex][header]), 0, 11);
+      return;
+    }
+    state.rows[rowIndex][header] = clamp(parseLocaleNumber(value, state.rows[rowIndex][header]), 1, 14);
+  };
+
+  const focusCell = (rowIndex, colIndex) => {
+    const selector = `td[data-row='${rowIndex}'][data-col='${colIndex}']`;
+    const target = tbody.querySelector(selector);
+    if (!target) return;
+    target.focus();
+    const range = document.createRange();
+    range.selectNodeContents(target);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  };
+
   rows.forEach((row, rIdx) => {
     const tr = document.createElement("tr");
     headers.forEach((h, cIdx) => {
       const td = document.createElement("td");
-      const input = document.createElement("input");
-      input.type = "text";
-      let safeHeader = h.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
-      if (!safeHeader) {
-        safeHeader = `col_${cIdx}`;
-      }
-      input.name = `dpu_${rIdx}_${safeHeader}`;
-      input.id = `dpu_${rIdx}_${safeHeader}`;
-      input.autocomplete = "off";
+      td.contentEditable = "true";
+      td.spellcheck = false;
+      td.setAttribute("role", "gridcell");
+      td.setAttribute("aria-label", `${displayHeaders[cIdx]} række ${rIdx + 1}`);
+      td.dataset.row = String(rIdx);
+      td.dataset.col = String(cIdx);
       const value = row[h];
-      input.value = typeof value === "number" ? String(value).replace(".", ",") : String(value);
-      input.addEventListener("change", () => {
-        if (h === "DPU") {
-          state.rows[rIdx][h] = input.value.trim() || `DPU_${rIdx + 1}`;
-        } else if (h === "Alder_år") {
-          state.rows[rIdx][h] = clampInt(parseLocaleNumber(input.value, 0), 0, 18);
-        } else if (h === "Alder_mdr") {
-          state.rows[rIdx][h] = clampInt(parseLocaleNumber(input.value, 0), 0, 11);
-        } else {
-          state.rows[rIdx][h] = clamp(parseLocaleNumber(input.value, 8), 1, 14);
+      td.textContent = typeof value === "number" ? String(value).replace(".", ",") : String(value);
+
+      td.addEventListener("focus", () => {
+        const range = document.createRange();
+        range.selectNodeContents(td);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      });
+
+      td.addEventListener("blur", () => {
+        updateCellState(rIdx, h, td.textContent);
+        rerenderDataViews();
+      });
+
+      td.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          updateCellState(rIdx, h, td.textContent);
+          rerenderDataViews();
+          focusCell(Math.min(rows.length - 1, rIdx + 1), cIdx);
         }
+      });
+
+      td.addEventListener("paste", (event) => {
+        const pastedText = event.clipboardData?.getData("text/plain") || "";
+        if (!pastedText) return;
+        event.preventDefault();
+        const pastedRows = pastedText
+          .replace(/\r/g, "")
+          .split("\n")
+          .filter((line, idx, arr) => !(idx === arr.length - 1 && line === ""))
+          .map((line) => line.split("\t"));
+
+        pastedRows.forEach((pastedRow, rowOffset) => {
+          const targetRow = rIdx + rowOffset;
+          if (targetRow >= rows.length) return;
+          pastedRow.forEach((cellValue, colOffset) => {
+            const targetCol = cIdx + colOffset;
+            if (targetCol >= headers.length) return;
+            updateCellState(targetRow, headers[targetCol], cellValue);
+          });
+        });
+
         rerender();
       });
-      td.appendChild(input);
+
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
@@ -1771,6 +1832,10 @@ function rerender() {
   state.rows = normalizeRows(state.rows, state.numDpu);
   numDpuEl.value = String(state.numDpu);
   renderInputTable();
+  rerenderDataViews();
+}
+
+function rerenderDataViews() {
   const data = calculateData();
   renderComputedTable(data);
   renderCharts(data);
