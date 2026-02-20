@@ -455,7 +455,7 @@ th {
 
 .chart-svg .series-point {
   fill: var(--series-color, #2563eb);
-  animation: chart-point-spawn 0.2s linear 0.18s both;
+  animation: chart-point-spawn 0.18s linear 0.66s both;
 }
 
 .chart-svg [data-ci-band="true"] {
