@@ -455,8 +455,7 @@ th {
 
 .chart-svg .series-point {
   fill: var(--series-color, #2563eb);
-  transform-origin: center;
-  animation: chart-point-spawn 0.22s ease-out 0.18s both;
+  animation: chart-point-spawn 0.2s linear 0.18s both;
 }
 
 .chart-svg [data-ci-band="true"] {
@@ -483,15 +482,9 @@ th {
 @keyframes chart-point-spawn {
   0% {
     opacity: 0;
-    transform: scale(0);
-  }
-  70% {
-    opacity: 1;
-    transform: scale(1.16);
   }
   100% {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
