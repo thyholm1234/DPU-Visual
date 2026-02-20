@@ -1074,7 +1074,7 @@ function renderSummaryOverview(data) {
           ${renderMetric("Kronologisk alder", formatMonthsAsYearMonth(last.Krono_mdr)) }
           ${renderMetric("Estimeret alder", formatMonthsAsYearMonth(totalEstimatedAge)) }
           ${renderMetric("Afvigelse", formatMonthsAsYearMonth(totalDeviationCi.mean), `color:${deviationMeanColor(totalDeviationCi.mean)};font-weight:700;`) }
-          ${renderMetric("Hældning", `${fmt(totalTrend.slopePerYear)} mdr/år`, `color:${slopeYearColor(totalTrend.slopePerYear)};font-weight:700;`) }
+          ${renderMetric("Udvikling", `${fmt(totalTrend.slopePerYear)} mdr/år`, `color:${slopeYearColor(totalTrend.slopePerYear)};font-weight:700;`) }
           ${renderMetric("Effektstørrelse", totalEffect, `color:${effectMagnitudeColor(totalEffect)};font-weight:700;`) }
         </article>
 
