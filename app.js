@@ -662,8 +662,10 @@ function renderInputTable() {
         const pastedRows = pastedText
           .replace(/\r/g, "")
           .split("\n")
-          .filter((line, idx, arr) => !(idx === arr.length - 1 && line === ""))
-          .map((line) => line.split("\t"));
+          .map((line) => line.split("\t"))
+          .filter((cells) => cells.some((cell) => String(cell).trim() !== ""));
+
+        if (!pastedRows.length) return;
 
         const requiredRows = rIdx + pastedRows.length;
         if (requiredRows > state.numDpu) {
