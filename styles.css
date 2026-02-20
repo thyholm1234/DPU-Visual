@@ -171,6 +171,38 @@ th {
   background: #fff;
 }
 
+.input-spreadsheet {
+  table-layout: fixed;
+  min-width: 1080px;
+}
+
+.input-spreadsheet th,
+.input-spreadsheet td {
+  white-space: nowrap;
+}
+
+.input-spreadsheet th:nth-child(1),
+.input-spreadsheet td:nth-child(1) {
+  width: 220px;
+  text-align: left;
+}
+
+.input-spreadsheet td:nth-child(1) input {
+  text-align: left;
+}
+
+.input-spreadsheet th:nth-child(2),
+.input-spreadsheet td:nth-child(2),
+.input-spreadsheet th:nth-child(3),
+.input-spreadsheet td:nth-child(3) {
+  width: 72px;
+}
+
+.input-spreadsheet th:nth-child(n + 4),
+.input-spreadsheet td:nth-child(n + 4) {
+  width: 78px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: 1fr;

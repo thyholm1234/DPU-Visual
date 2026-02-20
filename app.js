@@ -553,13 +553,24 @@ function round1(n) {
 function renderInputTable() {
   const rows = normalizeRows(state.rows, state.numDpu);
   const headers = ["DPU", "Alder_år", "Alder_mdr", ...SCALE_NAMES];
+  const displayHeaders = [
+    "Navn",
+    "År",
+    "Mdr",
+    ...SCALE_NAMES.map((_, idx) => `S${idx + 1}`)
+  ];
 
   const table = document.createElement("table");
+  table.className = "input-spreadsheet";
   const thead = document.createElement("thead");
   const headRow = document.createElement("tr");
-  headers.forEach((h) => {
+  headers.forEach((h, idx) => {
     const th = document.createElement("th");
-    th.textContent = h;
+    th.textContent = displayHeaders[idx];
+    if (h !== "DPU") {
+      th.title = h;
+      th.setAttribute("aria-label", h);
+    }
     headRow.appendChild(th);
   });
   thead.appendChild(headRow);
