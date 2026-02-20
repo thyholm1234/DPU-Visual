@@ -194,7 +194,7 @@ exportCsvEl.addEventListener("click", () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "dpu_scorer_client_only.csv";
+  a.download = "dpu_scorer.csv";
   a.click();
   URL.revokeObjectURL(url);
 });
