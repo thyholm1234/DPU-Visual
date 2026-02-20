@@ -209,7 +209,7 @@ async function exportReportPdf() {
 
   const originalLabel = exportPdfEl.textContent;
   exportPdfEl.disabled = true;
-  exportPdfEl.textContent = "Genererer PDF...";
+  exportPdfEl.textContent = "Genererer rapport...";
 
   chartRenderWidthOverride = PDF_RENDER_WIDTH;
   rerender();
