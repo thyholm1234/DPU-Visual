@@ -762,7 +762,7 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
   const maxLabelLength = labels.reduce((maxLen, label) => Math.max(maxLen, String(label).length), 0);
   const hasLongLabels = labels.some((label) => String(label).length > 14);
   const xLabelFontSize = 11;
-  const longLabelBottom = Math.min(148, 88 + Math.max(0, Math.round((maxLabelLength - 14) * 1.8)));
+  const longLabelBottom = Math.min(180, 106 + Math.max(0, Math.round((maxLabelLength - 14) * 2.1)));
   const margin = { top: 18, right: 28, bottom: hasLongLabels ? longLabelBottom : 58, left: 84 };
   const plotW = width - margin.left - margin.right;
   const plotH = height - margin.top - margin.bottom;
