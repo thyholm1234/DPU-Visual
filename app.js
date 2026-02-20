@@ -1058,7 +1058,7 @@ function renderSummaryOverview(data) {
             <article class='summary-tile summary-tile-scale'>
               <div class='summary-title'>${escapeHtml(card.scale)}</div>
               ${renderMetric("Afvigelse", `${fmt(card.deviationMean)} mdr`, `color:${deviationMeanColor(card.deviationMean)};font-weight:700;`) }
-              ${renderMetric("Hældning", `${fmt(card.slopePerYear)} mdr/år`, `color:${slopeYearColor(card.slopePerYear)};font-weight:700;`) }
+              ${renderMetric("Udvikling", `${fmt(card.slopePerYear)} mdr/år`, `color:${slopeYearColor(card.slopePerYear)};font-weight:700;`) }
               ${renderMetric("Effektstørrelse", card.effect, `color:${effectMagnitudeColor(card.effect)};font-weight:700;`) }
             </article>
           `).join("")}
