@@ -74,12 +74,21 @@ body {
   line-height: 1.45;
   background: var(--st-app-bg);
   color: var(--st-text);
+  min-height: 100vh;
+}
+
+html,
+body {
+  height: 100%;
 }
 
 .container {
   max-width: 1280px;
   margin: 0 auto;
   padding: 1.25rem 1.5rem 2.5rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .page-intro {
@@ -628,7 +637,7 @@ th {
 }
 
 .site-footer {
-  margin-top: 0.5rem;
+  margin-top: auto;
 }
 
 .disclaimer-card h2 {

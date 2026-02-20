@@ -103,6 +103,8 @@ clearLegacyBrowserStorage();
 const numDpuEl = document.getElementById("numDpu");
 const inputTableEl = document.getElementById("inputTable");
 const computedTableEl = document.getElementById("computedTable");
+const graphsSectionEl = document.getElementById("graphsSection");
+const statsSectionEl = document.getElementById("statsSection");
 const importCsvEl = document.getElementById("importCsv");
 const exportCsvEl = document.getElementById("exportCsv");
 const exportPdfEl = document.getElementById("exportPdf");
@@ -2041,29 +2043,13 @@ function getDataReadiness(rows) {
   };
 }
 
-function renderPendingMessage(message) {
-  const html = `<p class='small'>${escapeHtml(message)}</p>`;
-  const containerIds = [
-    "computedTable",
-    "chartCombinedProfile",
-    "crossCharts",
-    "summaryOverview",
-    "chartCombinedDiff",
-    "scaleDeviationChart",
-    "deviationCharts",
-    "lastDpuCiReferenceChart",
-    "ageCiSummary",
-    "estimatedLastAgeSummary",
-    "statsScale",
-    "wilcoxonSection"
-  ];
-
-  containerIds.forEach((id) => {
-    const container = document.getElementById(id);
-    if (container) {
-      container.innerHTML = html;
-    }
-  });
+function setDataSectionsVisible(visible) {
+  if (graphsSectionEl) {
+    graphsSectionEl.style.display = visible ? "" : "none";
+  }
+  if (statsSectionEl) {
+    statsSectionEl.style.display = visible ? "" : "none";
+  }
 }
 
 function rerender() {
@@ -2077,10 +2063,11 @@ function rerenderDataViews() {
   const rows = normalizeRows(state.rows, state.numDpu);
   const readiness = getDataReadiness(rows);
   if (!readiness.ready) {
-    renderPendingMessage(`Indtast mindst to komplette DPU'er med gyldige værdier i alle celler (${readiness.completeRows}/${readiness.totalRows} komplette).`);
+    setDataSectionsVisible(false);
     return;
   }
 
+  setDataSectionsVisible(true);
   const data = calculateData(rows);
   renderComputedTable(data);
   renderCharts(data);
