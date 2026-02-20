@@ -656,14 +656,14 @@ function renderCharts(data) {
       initiallyVisible: row.Krono_mdr === latestKrono
     });
   });
-  renderLineChart(document.getElementById("chartCombinedProfile"), SCALE_NAMES, combinedSeries, "Alder (mdr)", { height: 360 });
+  renderLineChart(document.getElementById("chartCombinedProfile"), SCALE_NAMES, combinedSeries, "Alder (mdr)", { height: 615 });
 
   const diffSeries = data.map((row, idx) => ({
     name: row.DPU,
     values: SCALE_NAMES.map((s) => row[`Afvigelse_mdr_${s}`]),
     colorClass: COLOR_CLASS[idx % COLORS.length]
   }));
-  renderLineChart(document.getElementById("chartCombinedDiff"), SCALE_NAMES, diffSeries, "Afvigelse (mdr)", { zeroLine: 0, height: 340 });
+  renderLineChart(document.getElementById("chartCombinedDiff"), SCALE_NAMES, diffSeries, "Afvigelse (mdr)", { zeroLine: 0, height: 585 });
 
   const crossContainer = document.getElementById("crossCharts");
   crossContainer.innerHTML = "";
@@ -711,8 +711,9 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
   const height = options.height || 300;
   const maxLabelLength = labels.reduce((maxLen, label) => Math.max(maxLen, String(label).length), 0);
   const hasLongLabels = labels.some((label) => String(label).length > 14);
+  const xLabelFontSize = 11;
   const longLabelBottom = Math.min(148, 88 + Math.max(0, Math.round((maxLabelLength - 14) * 1.8)));
-  const margin = { top: 18, right: 20, bottom: hasLongLabels ? longLabelBottom : 58, left: 56 };
+  const margin = { top: 18, right: 28, bottom: hasLongLabels ? longLabelBottom : 58, left: 84 };
   const plotW = width - margin.left - margin.right;
   const plotH = height - margin.top - margin.bottom;
 
@@ -746,7 +747,9 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
     minX -= 0.5;
     maxX += 0.5;
   }
-  const xPos = (i) => margin.left + ((xValues[i] - minX) / (maxX - minX)) * plotW;
+  const xEdgeInset = hasLongLabels ? Math.min(56, 24 + Math.round((maxLabelLength - 14) * 0.9)) : 0;
+  const innerPlotW = Math.max(1, plotW - xEdgeInset * 2);
+  const xPos = (i) => margin.left + xEdgeInset + ((xValues[i] - minX) / (maxX - minX)) * innerPlotW;
   const yPos = (v) => margin.top + ((maxY - v) / (maxY - minY)) * plotH;
 
   const ticks = 5;
@@ -768,9 +771,9 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
     const x = xPos(i);
     const y = margin.top + plotH + (hasLongLabels ? 34 : 16);
     if (hasLongLabels) {
-      svg += `<text x='${x}' y='${y}' text-anchor='end' transform='rotate(-30 ${x} ${y})' font-size='10' fill='#6b7280'>${escapeXml(label)}</text>`;
+      svg += `<text x='${x}' y='${y}' text-anchor='end' transform='rotate(-30 ${x} ${y})' font-size='${xLabelFontSize}' fill='#6b7280'>${escapeXml(label)}</text>`;
     } else {
-      svg += `<text x='${x}' y='${y}' text-anchor='middle' font-size='10' fill='#6b7280'>${escapeXml(label)}</text>`;
+      svg += `<text x='${x}' y='${y}' text-anchor='middle' font-size='${xLabelFontSize}' fill='#6b7280'>${escapeXml(label)}</text>`;
     }
   });
 
@@ -1423,7 +1426,7 @@ function renderDeviationCharts(data) {
     "Afvigelse (mdr)",
     {
       zeroLine: 0,
-      height: 300,
+      height: 525,
       ciBand: {
         label: CI_LABEL,
         lowValues: deviationStatsByScale.map((entry) => round1(entry.low)),
