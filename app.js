@@ -745,24 +745,6 @@ function renderCharts(data) {
   renderLineChart(document.getElementById("chartCombinedDiff"), SCALE_NAMES, diffSeries, "Afvigelse (mdr)", { zeroLine: 0, height: 585 });
 
   const dataByAge = [...data].sort((a, b) => a.Krono_mdr - b.Krono_mdr);
-  renderLineChart(
-    document.getElementById("chartDeviationVsChrono"),
-    dataByAge.map((row) => row.DPU),
-    [
-      {
-        name: "Afvigelse gns (mdr)",
-        values: dataByAge.map((row) => row.Afvigelse_mdr_gns),
-        colorClass: "series-color-1"
-      }
-    ],
-    "Afvigelse (mdr)",
-    {
-      zeroLine: 0,
-      height: 360,
-      xValues: dataByAge.map((row) => row.Krono_mdr)
-    }
-  );
-
   const crossContainer = document.getElementById("crossCharts");
   crossContainer.innerHTML = "";
   SCALE_NAMES.forEach((scale) => {
@@ -1578,6 +1560,36 @@ function renderDeviationCharts(data) {
     }
   );
   container.appendChild(dpuBox);
+
+  const relativeBox = document.createElement("div");
+  relativeBox.className = "chart";
+  const relativeTitle = document.createElement("div");
+  relativeTitle.className = "scale-chart-title";
+  relativeTitle.textContent = "Relativ afvigelse ift. kronologisk alder (%)";
+  relativeBox.appendChild(relativeTitle);
+  const relativeHost = document.createElement("div");
+  relativeBox.appendChild(relativeHost);
+  renderLineChart(
+    relativeHost,
+    dataByAge.map((row) => row.DPU),
+    [
+      {
+        name: "Relativ afvigelse (%)",
+        values: dataByAge.map((row) => {
+          if (!Number.isFinite(row.Krono_mdr) || row.Krono_mdr <= 0) return NaN;
+          return (row.Afvigelse_mdr_gns / row.Krono_mdr) * 100;
+        }),
+        colorClass: "series-color-1"
+      }
+    ],
+    "Afvigelse (%)",
+    {
+      zeroLine: 0,
+      height: 360,
+      xValues: dataByAge.map((row) => row.Krono_mdr)
+    }
+  );
+  container.appendChild(relativeBox);
 
   const scaleBox = document.createElement("div");
   scaleBox.className = "chart";
