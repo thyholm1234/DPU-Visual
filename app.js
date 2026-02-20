@@ -983,7 +983,12 @@ function renderStats(data) {
   renderGenericTable(
     document.getElementById("statsScale"),
     ["Skala", "n", "Gns afvigelse (mdr)", "Min afvigelse (mdr)", "Max afvigelse (mdr)", `${CI_LABEL} lav`, `${CI_LABEL} høj`],
-    buildScaleDeviationSummaryRows(data)
+    buildScaleDeviationSummaryRows(data),
+    {
+      valueStyles: {
+        "Gns afvigelse (mdr)": (value) => ({ color: deviationMeanColor(value), fontWeight: "700" })
+      }
+    }
   );
 
   const dpuContainer = document.getElementById("statsDpu");
@@ -1029,10 +1034,10 @@ function renderSummaryOverview(data) {
     };
   });
 
-  const renderMetric = (label, value) => `
+  const renderMetric = (label, value, valueStyle = "") => `
     <div class='summary-metric'>
       <span class='summary-metric-label'>${escapeHtml(label)}</span>
-      <span class='summary-metric-value'>${escapeHtml(value)}</span>
+      <span class='summary-metric-value'${valueStyle ? ` style='${valueStyle}'` : ""}>${escapeHtml(value)}</span>
     </div>
   `;
 
@@ -1043,8 +1048,8 @@ function renderSummaryOverview(data) {
           <div class='summary-title'>Hele skala alder</div>
           ${renderMetric("Kronologisk alder", formatMonthsAsYearMonth(last.Krono_mdr)) }
           ${renderMetric("Estimeret alder", formatMonthsAsYearMonth(totalEstimatedAge)) }
-          ${renderMetric("Afvigelse", formatMonthsAsYearMonth(totalDeviationCi.mean)) }
-          ${renderMetric("Hældning", `${fmt(totalTrend.slopePerYear)} mdr/år`) }
+          ${renderMetric("Afvigelse", formatMonthsAsYearMonth(totalDeviationCi.mean), `color:${deviationMeanColor(totalDeviationCi.mean)};font-weight:700;`) }
+          ${renderMetric("Hældning", `${fmt(totalTrend.slopePerYear)} mdr/år`, `color:${slopeYearColor(totalTrend.slopePerYear)};font-weight:700;`) }
           ${renderMetric("Effektstørrelse", totalEffect) }
         </article>
 
@@ -1052,8 +1057,8 @@ function renderSummaryOverview(data) {
           ${scaleCards.map((card) => `
             <article class='summary-tile summary-tile-scale'>
               <div class='summary-title'>${escapeHtml(card.scale)}</div>
-              ${renderMetric("Afvigelse", `${fmt(card.deviationMean)} mdr`) }
-              ${renderMetric("Hældning", `${fmt(card.slopePerYear)} mdr/år`) }
+              ${renderMetric("Afvigelse", `${fmt(card.deviationMean)} mdr`, `color:${deviationMeanColor(card.deviationMean)};font-weight:700;`) }
+              ${renderMetric("Hældning", `${fmt(card.slopePerYear)} mdr/år`, `color:${slopeYearColor(card.slopePerYear)};font-weight:700;`) }
               ${renderMetric("Effektstørrelse", card.effect) }
             </article>
           `).join("")}
@@ -1439,6 +1444,20 @@ function slopeYearColor(value) {
   }
 
   return "#111111";
+}
+
+function deviationMeanColor(value) {
+  if (!Number.isFinite(value)) return "#111111";
+  if (value >= -8) return "#111111";
+  if (value >= -12) {
+    const ratio = (Math.abs(value) - 8) / 4;
+    return interpolateColor("#111111", "#f59e0b", ratio);
+  }
+  if (value >= -24) {
+    const ratio = (Math.abs(value) - 12) / 12;
+    return interpolateColor("#f59e0b", "#d62828", ratio);
+  }
+  return "#d62828";
 }
 
 function interpolateColor(startHex, endHex, ratio) {
