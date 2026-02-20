@@ -1892,7 +1892,7 @@ function formatMonthsAsYearMonth(monthValue) {
   const totalMonths = Math.round(Math.abs(monthValue));
   const years = Math.floor(totalMonths / 12);
   const months = totalMonths % 12;
-  return `${sign}${years}:${months}`;
+  return `${sign}${years}:${months} år`;
 }
 
 function escapeHtml(s) {
