@@ -1045,7 +1045,7 @@ function renderSummaryOverview(data) {
     <div class='chart summary-overview'>
       <div class='summary-layout'>
         <article class='summary-tile summary-tile-main'>
-          <div class='summary-title'>Hele skala alder</div>
+          <div class='summary-title'>Hele skalaen</div>
           ${renderMetric("Kronologisk alder", formatMonthsAsYearMonth(last.Krono_mdr)) }
           ${renderMetric("Estimeret alder", formatMonthsAsYearMonth(totalEstimatedAge)) }
           ${renderMetric("Afvigelse", formatMonthsAsYearMonth(totalDeviationCi.mean), `color:${deviationMeanColor(totalDeviationCi.mean)};font-weight:700;`) }

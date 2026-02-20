@@ -589,6 +589,10 @@ th {
   margin-bottom: 0.8rem;
 }
 
+#computedTable + h3 {
+  margin-top: 0.95rem;
+}
+
 .small {
   font-size: 0.78rem;
   color: var(--st-muted);
