@@ -235,6 +235,7 @@ async function exportReportPdf() {
   clone.querySelectorAll(".no-print").forEach((el) => el.remove());
   renderHost.appendChild(clone);
   document.body.appendChild(renderHost);
+  await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
 
   try {
     const pdf = new JsPdfCtor({

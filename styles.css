@@ -628,6 +628,14 @@ th {
   padding: 0;
 }
 
+.pdf-render-root .chart-svg .series-line,
+.pdf-render-root .chart-svg .series-point,
+.pdf-render-root .chart-svg [data-ci-band="true"] {
+  animation: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+}
+
 @media (max-width: 760px) {
   .container {
     padding: 0.9rem 0.75rem 1.25rem;
