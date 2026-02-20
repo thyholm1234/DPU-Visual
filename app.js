@@ -22,6 +22,50 @@ const PDF_RENDER_WIDTH = 1160;
 const LEGACY_STORAGE_KEYS = ["dpu_client_only_state_v1", "dpu_state", "dpu_data"];
 const CI_LEVEL = 0.8;
 const CI_LABEL = `${Math.round(CI_LEVEL * 100)}% CI`;
+const EXAMPLE_ROWS = [
+  {
+    DPU: "DPU1",
+    Alder_år: 4,
+    Alder_mdr: 2,
+    "Opmærksomhed": 11.26,
+    "Hukommelse": 9.52,
+    "Leg og aktiviteter": 9.68,
+    "Sprog og kommunikative kompetencer": 9.71,
+    "Sociale kompetencer": 9.57,
+    "Selvregulering": 11.26,
+    "Grovmotorik": 12,
+    "Finmotorik": 11.9,
+    "Færdigheder i dagligdagen": 11.75
+  },
+  {
+    DPU: "DPU2",
+    Alder_år: 4,
+    Alder_mdr: 7,
+    "Opmærksomhed": 11.5,
+    "Hukommelse": 10.5,
+    "Leg og aktiviteter": 10.95,
+    "Sprog og kommunikative kompetencer": 9.95,
+    "Sociale kompetencer": 10.2,
+    "Selvregulering": 9.6,
+    "Grovmotorik": 12.5,
+    "Finmotorik": 12.7,
+    "Færdigheder i dagligdagen": 11.8
+  },
+  {
+    DPU: "DPU3",
+    Alder_år: 5,
+    Alder_mdr: 5,
+    "Opmærksomhed": 11.9,
+    "Hukommelse": 12.5,
+    "Leg og aktiviteter": 12.2,
+    "Sprog og kommunikative kompetencer": 12.2,
+    "Sociale kompetencer": 12,
+    "Selvregulering": 11.5,
+    "Grovmotorik": 12.8,
+    "Finmotorik": 12.8,
+    "Færdigheder i dagligdagen": 12.3
+  }
+];
 let chartRenderWidthOverride = null;
 
 let state = { numDpu: DEFAULT_DPU, rows: makeDefaultRows(DEFAULT_DPU) };
@@ -35,6 +79,7 @@ const importCsvEl = document.getElementById("importCsv");
 const exportCsvEl = document.getElementById("exportCsv");
 const exportPdfEl = document.getElementById("exportPdf");
 const resetBtnEl = document.getElementById("resetBtn");
+const exampleBtnEl = document.getElementById("exampleBtn");
 const applyPasteEl = document.getElementById("applyPaste");
 const pasteAreaEl = document.getElementById("pasteArea");
 
@@ -56,6 +101,13 @@ numDpuEl.addEventListener("change", () => {
 resetBtnEl.addEventListener("click", () => {
   const value = Math.max(DEFAULT_DPU, Number(numDpuEl.value) || DEFAULT_DPU);
   state = { numDpu: value, rows: makeDefaultRows(value) };
+  rerender();
+});
+
+exampleBtnEl.addEventListener("click", () => {
+  state.numDpu = EXAMPLE_ROWS.length;
+  state.rows = normalizeRows(EXAMPLE_ROWS, EXAMPLE_ROWS.length);
+  pasteAreaEl.value = "";
   rerender();
 });
 
