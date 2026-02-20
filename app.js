@@ -176,7 +176,7 @@ importCsvEl.addEventListener("change", async (event) => {
 
 exportCsvEl.addEventListener("click", () => {
   const rows = normalizeRows(state.rows, state.numDpu);
-  const headers = ["DPU", "Alder_år", "Alder_mdr", ...SCALE_NAMES];
+  const headers = ["DPU", "Alder (År)", "Alder (Mdr)", ...SCALE_NAMES];
   const lines = [headers.join(";")];
   rows.forEach((row) => {
     const cells = headers.map((h) => {
