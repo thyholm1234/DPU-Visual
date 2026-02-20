@@ -1050,7 +1050,7 @@ function renderSummaryOverview(data) {
           ${renderMetric("Estimeret alder", formatMonthsAsYearMonth(totalEstimatedAge)) }
           ${renderMetric("Afvigelse", formatMonthsAsYearMonth(totalDeviationCi.mean), `color:${deviationMeanColor(totalDeviationCi.mean)};font-weight:700;`) }
           ${renderMetric("Hældning", `${fmt(totalTrend.slopePerYear)} mdr/år`, `color:${slopeYearColor(totalTrend.slopePerYear)};font-weight:700;`) }
-          ${renderMetric("Effektstørrelse", totalEffect) }
+          ${renderMetric("Effektstørrelse", totalEffect, `color:${effectMagnitudeColor(totalEffect)};font-weight:700;`) }
         </article>
 
         <div class='summary-grid'>
@@ -1059,7 +1059,7 @@ function renderSummaryOverview(data) {
               <div class='summary-title'>${escapeHtml(card.scale)}</div>
               ${renderMetric("Afvigelse", `${fmt(card.deviationMean)} mdr`, `color:${deviationMeanColor(card.deviationMean)};font-weight:700;`) }
               ${renderMetric("Hældning", `${fmt(card.slopePerYear)} mdr/år`, `color:${slopeYearColor(card.slopePerYear)};font-weight:700;`) }
-              ${renderMetric("Effektstørrelse", card.effect) }
+              ${renderMetric("Effektstørrelse", card.effect, `color:${effectMagnitudeColor(card.effect)};font-weight:700;`) }
             </article>
           `).join("")}
         </div>
@@ -1237,7 +1237,8 @@ function renderWilcoxonSection(data) {
     rows,
     {
       valueStyles: {
-        "Hældning (mdr/år)": (value) => ({ color: slopeYearColor(value), fontWeight: "700" })
+        "Hældning (mdr/år)": (value) => ({ color: slopeYearColor(value), fontWeight: "700" }),
+        "Fit niveau": (value) => ({ color: effectMagnitudeColor(value), fontWeight: "700" })
       }
     }
   );
@@ -1427,6 +1428,12 @@ function fitMagnitudeLabel(rSquared) {
   if (rSquared < 0.5) return "Moderat";
   if (rSquared < 0.7) return "God";
   return "Høj";
+}
+
+function effectMagnitudeColor(label) {
+  if (label === "Meget lav") return "#d62828";
+  if (label === "Lav") return "#f59e0b";
+  return "#111111";
 }
 
 function slopeYearColor(value) {
