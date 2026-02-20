@@ -1561,36 +1561,6 @@ function renderDeviationCharts(data) {
   );
   container.appendChild(dpuBox);
 
-  const relativeBox = document.createElement("div");
-  relativeBox.className = "chart";
-  const relativeTitle = document.createElement("div");
-  relativeTitle.className = "scale-chart-title";
-  relativeTitle.textContent = "Relativ afvigelse ift. kronologisk alder (%)";
-  relativeBox.appendChild(relativeTitle);
-  const relativeHost = document.createElement("div");
-  relativeBox.appendChild(relativeHost);
-  renderLineChart(
-    relativeHost,
-    dataByAge.map((row) => row.DPU),
-    [
-      {
-        name: "Relativ afvigelse (%)",
-        values: dataByAge.map((row) => {
-          if (!Number.isFinite(row.Krono_mdr) || row.Krono_mdr <= 0) return NaN;
-          return (row.Afvigelse_mdr_gns / row.Krono_mdr) * 100;
-        }),
-        colorClass: "series-color-1"
-      }
-    ],
-    "Afvigelse (%)",
-    {
-      zeroLine: 0,
-      height: 360,
-      xValues: dataByAge.map((row) => row.Krono_mdr)
-    }
-  );
-  container.appendChild(relativeBox);
-
   const scaleBox = document.createElement("div");
   scaleBox.className = "chart";
   const scaleTitle = document.createElement("div");
@@ -1637,6 +1607,36 @@ function renderDeviationCharts(data) {
     }
   );
   container.appendChild(scaleBox);
+
+  const relativeAllDpuBox = document.createElement("div");
+  relativeAllDpuBox.className = "chart";
+  const relativeAllDpuTitle = document.createElement("div");
+  relativeAllDpuTitle.className = "scale-chart-title";
+  relativeAllDpuTitle.textContent = "Relativ afvigelse fra kronologisk alder (alle DPU, %)";
+  relativeAllDpuBox.appendChild(relativeAllDpuTitle);
+  const relativeAllDpuHost = document.createElement("div");
+  relativeAllDpuBox.appendChild(relativeAllDpuHost);
+
+  const relativeDiffSeries = dataByAge.map((row, idx) => ({
+    name: row.DPU,
+    values: SCALE_NAMES.map((scale) => {
+      if (!Number.isFinite(row.Krono_mdr) || row.Krono_mdr <= 0) return NaN;
+      return (row[`Afvigelse_mdr_${scale}`] / row.Krono_mdr) * 100;
+    }),
+    colorClass: COLOR_CLASS[idx % COLORS.length]
+  }));
+
+  renderLineChart(
+    relativeAllDpuHost,
+    SCALE_NAMES,
+    relativeDiffSeries,
+    "Afvigelse (%)",
+    {
+      zeroLine: 0,
+      height: 585
+    }
+  );
+  container.appendChild(relativeAllDpuBox);
 }
 
 function renderDeviationSummaries(data) {
