@@ -625,9 +625,15 @@ function renderInputTable() {
           .filter((line, idx, arr) => !(idx === arr.length - 1 && line === ""))
           .map((line) => line.split("\t"));
 
+        const requiredRows = rIdx + pastedRows.length;
+        if (requiredRows > state.numDpu) {
+          state.numDpu = requiredRows;
+          state.rows = normalizeRows(state.rows, requiredRows);
+        }
+
         pastedRows.forEach((pastedRow, rowOffset) => {
           const targetRow = rIdx + rowOffset;
-          if (targetRow >= rows.length) return;
+          if (targetRow >= state.rows.length) return;
           pastedRow.forEach((cellValue, colOffset) => {
             const targetCol = cIdx + colOffset;
             if (targetCol >= headers.length) return;
