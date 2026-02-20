@@ -709,8 +709,10 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
   const xValues = hasNumericXValues ? options.xValues : labels.map((_, idx) => idx);
   const width = Math.max(360, chartRenderWidthOverride || container.clientWidth || container.parentElement?.clientWidth || 900);
   const height = options.height || 300;
+  const maxLabelLength = labels.reduce((maxLen, label) => Math.max(maxLen, String(label).length), 0);
   const hasLongLabels = labels.some((label) => String(label).length > 14);
-  const margin = { top: 18, right: 20, bottom: hasLongLabels ? 88 : 58, left: 56 };
+  const longLabelBottom = Math.min(148, 88 + Math.max(0, Math.round((maxLabelLength - 14) * 1.8)));
+  const margin = { top: 18, right: 20, bottom: hasLongLabels ? longLabelBottom : 58, left: 56 };
   const plotW = width - margin.left - margin.right;
   const plotH = height - margin.top - margin.bottom;
 
@@ -764,7 +766,7 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
 
   labels.forEach((label, i) => {
     const x = xPos(i);
-    const y = margin.top + plotH + (hasLongLabels ? 28 : 16);
+    const y = margin.top + plotH + (hasLongLabels ? 34 : 16);
     if (hasLongLabels) {
       svg += `<text x='${x}' y='${y}' text-anchor='end' transform='rotate(-30 ${x} ${y})' font-size='10' fill='#6b7280'>${escapeXml(label)}</text>`;
     } else {
