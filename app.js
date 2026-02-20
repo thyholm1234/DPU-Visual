@@ -25,6 +25,34 @@ const CI_LABEL = `${Math.round(CI_LEVEL * 100)}% CI`;
 const EXAMPLE_ROWS = [
   {
     DPU: "DPU1",
+    Alder_år: 3,
+    Alder_mdr: 0,
+    "Opmærksomhed": 9.8,
+    "Hukommelse": 7.5,
+    "Leg og aktiviteter": 7.9,
+    "Sprog og kommunikative kompetencer": 7.8,
+    "Sociale kompetencer": 7.5,
+    "Selvregulering": 8.0,
+    "Grovmotorik": 9.5,
+    "Finmotorik": 9.5,
+    "Færdigheder i dagligdagen": 9.5
+  },
+  {
+    DPU: "DPU2",
+    Alder_år: 3,
+    Alder_mdr: 7,
+    "Opmærksomhed": 10.5,
+    "Hukommelse": 8.6,
+    "Leg og aktiviteter": 8.2,
+    "Sprog og kommunikative kompetencer": 8.5,
+    "Sociale kompetencer": 8.2,
+    "Selvregulering": 8.7,
+    "Grovmotorik": 10.5,
+    "Finmotorik": 10.5,
+    "Færdigheder i dagligdagen": 9.7
+  },
+  {
+    DPU: "DPU3",
     Alder_år: 4,
     Alder_mdr: 2,
     "Opmærksomhed": 11.26,
@@ -32,13 +60,13 @@ const EXAMPLE_ROWS = [
     "Leg og aktiviteter": 9.68,
     "Sprog og kommunikative kompetencer": 9.71,
     "Sociale kompetencer": 9.57,
-    "Selvregulering": 11.26,
+    "Selvregulering": 10,
     "Grovmotorik": 12,
     "Finmotorik": 11.9,
     "Færdigheder i dagligdagen": 11.75
   },
   {
-    DPU: "DPU2",
+    DPU: "DPU4",
     Alder_år: 4,
     Alder_mdr: 7,
     "Opmærksomhed": 11.5,
@@ -52,7 +80,7 @@ const EXAMPLE_ROWS = [
     "Færdigheder i dagligdagen": 11.8
   },
   {
-    DPU: "DPU3",
+    DPU: "DPU5",
     Alder_år: 5,
     Alder_mdr: 5,
     "Opmærksomhed": 11.9,
@@ -613,6 +641,7 @@ function renderComputedTable(data) {
 
 function renderCharts(data) {
   const combinedSeries = [];
+  const latestKrono = data.length ? Math.max(...data.map((row) => row.Krono_mdr)) : NaN;
   data.forEach((row, idx) => {
     combinedSeries.push({
       name: `${row.DPU} - DPU-alder`,
@@ -623,7 +652,8 @@ function renderCharts(data) {
       name: `${row.DPU} - Kronologisk`,
       values: SCALE_NAMES.map(() => row.Krono_mdr),
       colorClass: COLOR_CLASS[idx % COLORS.length],
-      dashed: true
+      dashed: true,
+      initiallyVisible: row.Krono_mdr === latestKrono
     });
   });
   renderLineChart(document.getElementById("chartCombinedProfile"), SCALE_NAMES, combinedSeries, "Alder (mdr)", { height: 360 });
@@ -738,13 +768,15 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
   }
 
   series.forEach((s, seriesIdx) => {
+    const visible = s.initiallyVisible !== false;
+    const visibilityAttr = visible ? "" : " style='display:none'";
     const pts = s.values.map((v, i) => `${xPos(i)},${yPos(v)}`).join(" ");
     const lineClass = `series-line ${s.colorClass || "series-color-0"}${s.dashed ? " dashed" : ""}`;
-    svg += `<polyline class='${lineClass}' data-series-index='${seriesIdx}' points='${pts}' fill='none' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' />`;
+    svg += `<polyline class='${lineClass}' data-series-index='${seriesIdx}' points='${pts}' fill='none' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'${visibilityAttr} />`;
     s.values.forEach((v, i) => {
       const tip = `${s.name} | ${labels[i]}: ${Number(v).toFixed(1).replace('.', ',')}`;
       const pointClass = `series-point ${s.colorClass || "series-color-0"}`;
-      svg += `<circle class='${pointClass}' data-series-index='${seriesIdx}' cx='${xPos(i)}' cy='${yPos(v)}' r='3.2'><title>${escapeXml(tip)}</title></circle>`;
+      svg += `<circle class='${pointClass}' data-series-index='${seriesIdx}' cx='${xPos(i)}' cy='${yPos(v)}' r='3.2'${visibilityAttr}><title>${escapeXml(tip)}</title></circle>`;
     });
   });
 
@@ -753,8 +785,10 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
 
   const legend = series
     .map((s, idx) => {
+      const visible = s.initiallyVisible !== false;
       const lineClass = `legend-line ${s.colorClass || "series-color-0"}${s.dashed ? " dashed" : ""}`;
-      return `<span class='legend-item legend-toggle' role='button' tabindex='0' aria-pressed='true' data-series-index='${idx}'><span class='${lineClass}'></span>${escapeXml(s.name)}</span>`;
+      const itemClass = `legend-item legend-toggle${visible ? "" : " is-off"}`;
+      return `<span class='${itemClass}' role='button' tabindex='0' aria-pressed='${visible ? "true" : "false"}' data-series-index='${idx}'><span class='${lineClass}'></span>${escapeXml(s.name)}</span>`;
     })
     .join("");
   container.innerHTML = `<div class='chart-shell'><div class='chart-legend'>${legend}</div>${svg}</div>`;
