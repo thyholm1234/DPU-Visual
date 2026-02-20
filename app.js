@@ -1331,11 +1331,16 @@ function renderDeviationCharts(data) {
   const scaleHost = document.createElement("div");
   scaleBox.appendChild(scaleHost);
 
-  const meanDeviationByScale = SCALE_NAMES.map((scale) => {
+  const deviationStatsByScale = SCALE_NAMES.map((scale) => {
     const vals = data
       .map((row) => row[`Afvigelse_mdr_${scale}`])
       .filter((v) => Number.isFinite(v));
-    return mean(vals);
+    const ci = meanCi(vals);
+    return {
+      mean: ci.mean,
+      low: ci.low,
+      high: ci.high
+    };
   });
 
   renderLineChart(
@@ -1344,8 +1349,20 @@ function renderDeviationCharts(data) {
     [
       {
         name: "Gns afvigelse (mdr)",
-        values: meanDeviationByScale,
+        values: deviationStatsByScale.map((entry) => round1(entry.mean)),
         colorClass: "series-color-3"
+      },
+      {
+        name: `${CI_LABEL} lav`,
+        values: deviationStatsByScale.map((entry) => round1(entry.low)),
+        colorClass: "series-color-muted",
+        dashed: true
+      },
+      {
+        name: `${CI_LABEL} høj`,
+        values: deviationStatsByScale.map((entry) => round1(entry.high)),
+        colorClass: "series-color-muted",
+        dashed: true
       }
     ],
     "Afvigelse (mdr)",
