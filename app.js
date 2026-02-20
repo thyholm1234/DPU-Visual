@@ -95,6 +95,7 @@ const EXAMPLE_ROWS = [
   }
 ];
 let chartRenderWidthOverride = null;
+let suppressCellBlurCommit = false;
 
 let state = { numDpu: DEFAULT_DPU, rows: makeDefaultRows(DEFAULT_DPU) };
 
@@ -556,6 +557,14 @@ function round1(n) {
   return Math.round(n * 10) / 10;
 }
 
+function normalizeEditableCellText(rawValue) {
+  return String(rawValue ?? "")
+    .replace(/\u00A0/g, " ")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[\u0000-\u001F]/g, "")
+    .trim();
+}
+
 function renderInputTable() {
   const rows = normalizeRows(state.rows, state.numDpu);
   state.rows = rows;
@@ -592,7 +601,7 @@ function renderInputTable() {
   const tbody = document.createElement("tbody");
   const updateCellState = (rowIndex, header, rawValue) => {
     if (!state.rows[rowIndex]) return;
-    const value = String(rawValue ?? "").trim();
+    const value = normalizeEditableCellText(rawValue);
     if (header === "DPU") {
       state.rows[rowIndex][header] = value || `DPU_${rowIndex + 1}`;
       return;
@@ -642,6 +651,7 @@ function renderInputTable() {
       });
 
       td.addEventListener("blur", () => {
+        if (suppressCellBlurCommit) return;
         updateCellState(rIdx, h, td.textContent);
         rerenderDataViews();
       });
@@ -659,13 +669,17 @@ function renderInputTable() {
         const pastedText = event.clipboardData?.getData("text/plain") || "";
         if (!pastedText) return;
         event.preventDefault();
+        suppressCellBlurCommit = true;
         const pastedRows = pastedText
           .replace(/\r/g, "")
           .split("\n")
-          .map((line) => line.split("\t"))
-          .filter((cells) => cells.some((cell) => String(cell).trim() !== ""));
+          .map((line) => line.split("\t").map((cell) => normalizeEditableCellText(cell)))
+          .filter((cells) => cells.some((cell) => cell !== ""));
 
-        if (!pastedRows.length) return;
+        if (!pastedRows.length) {
+          suppressCellBlurCommit = false;
+          return;
+        }
 
         const requiredRows = rIdx + pastedRows.length;
         if (requiredRows > state.numDpu) {
@@ -684,6 +698,9 @@ function renderInputTable() {
         });
 
         rerender();
+        window.requestAnimationFrame(() => {
+          suppressCellBlurCommit = false;
+        });
       });
 
       tr.appendChild(td);
