@@ -487,8 +487,8 @@ function interpolateDevMonths(score) {
   return NaN;
 }
 
-function calculateData() {
-  const rows = normalizeRows(state.rows, state.numDpu);
+function calculateData(rowsInput) {
+  const rows = Array.isArray(rowsInput) ? rowsInput : normalizeRows(state.rows, state.numDpu);
   return rows.map((row) => {
     const result = { ...row };
     const hasValidAge = Number.isFinite(row.Alder_år) && Number.isFinite(row.Alder_mdr);
@@ -2019,6 +2019,53 @@ function escapeXml(s) {
   return escapeHtml(s);
 }
 
+function isCompleteAndValidRow(row) {
+  if (!row) return false;
+
+  const hasValidYears = Number.isFinite(row.Alder_år);
+  const hasValidMonths = Number.isFinite(row.Alder_mdr);
+  if (!hasValidYears || !hasValidMonths) return false;
+
+  return SCALE_NAMES.every((scale) => Number.isFinite(row[scale]));
+}
+
+function getDataReadiness(rows) {
+  const completeRows = rows.filter(isCompleteAndValidRow).length;
+  const hasAtLeastTwoComplete = completeRows >= 2;
+  const allRowsComplete = completeRows === rows.length;
+
+  return {
+    ready: hasAtLeastTwoComplete && allRowsComplete,
+    completeRows,
+    totalRows: rows.length
+  };
+}
+
+function renderPendingMessage(message) {
+  const html = `<p class='small'>${escapeHtml(message)}</p>`;
+  const containerIds = [
+    "computedTable",
+    "chartCombinedProfile",
+    "crossCharts",
+    "summaryOverview",
+    "chartCombinedDiff",
+    "scaleDeviationChart",
+    "deviationCharts",
+    "lastDpuCiReferenceChart",
+    "ageCiSummary",
+    "estimatedLastAgeSummary",
+    "statsScale",
+    "wilcoxonSection"
+  ];
+
+  containerIds.forEach((id) => {
+    const container = document.getElementById(id);
+    if (container) {
+      container.innerHTML = html;
+    }
+  });
+}
+
 function rerender() {
   state.rows = normalizeRows(state.rows, state.numDpu);
   numDpuEl.value = String(state.numDpu);
@@ -2027,7 +2074,14 @@ function rerender() {
 }
 
 function rerenderDataViews() {
-  const data = calculateData();
+  const rows = normalizeRows(state.rows, state.numDpu);
+  const readiness = getDataReadiness(rows);
+  if (!readiness.ready) {
+    renderPendingMessage(`Indtast mindst to komplette DPU'er med gyldige værdier i alle celler (${readiness.completeRows}/${readiness.totalRows} komplette).`);
+    return;
+  }
+
+  const data = calculateData(rows);
   renderComputedTable(data);
   renderCharts(data);
   renderStats(data);
