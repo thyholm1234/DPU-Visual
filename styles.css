@@ -314,7 +314,7 @@ th {
 
 .input-spreadsheet th:nth-child(1),
 .input-spreadsheet td:nth-child(1) {
-  width: 220px;
+  width: 160px;
   text-align: left;
 }
 
@@ -326,7 +326,7 @@ th {
 .input-spreadsheet td:nth-child(2),
 .input-spreadsheet th:nth-child(3),
 .input-spreadsheet td:nth-child(3) {
-  width: 72px;
+  width: 92px;
 }
 
 .input-spreadsheet th:nth-child(n + 4),

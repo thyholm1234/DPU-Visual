@@ -580,7 +580,7 @@ function renderInputTable() {
     "Finmot.",
     "Færdigh. daglig."
   ];
-  const displayHeaders = ["DPU", "Alder (År)", "Alder (mdr)", ...scaleShortHeaders];
+  const displayHeaders = ["DPU", "Alder (År)", "Alder (Mdr)", ...scaleShortHeaders];
 
   const table = document.createElement("table");
   table.className = "input-spreadsheet";
