@@ -157,12 +157,12 @@ importCsvEl.addEventListener("change", async (event) => {
   parsed.rows.slice(0, importedCount).forEach((src, idx) => {
     const row = rows[idx];
     row.DPU = sanitizeCsvCell(String(src.DPU || row.DPU));
-    row.Alder_år = clampInt(parseLocaleNumber(src.Alder_år, row.Alder_år), 0, 18);
+    row.Alder_år = normalizeOptionalIntValue(src.Alder_år, 0, 18);
     if (parsed.hasMonthColumn && src.Alder_mdr !== undefined) {
-      row.Alder_mdr = clampInt(parseLocaleNumber(src.Alder_mdr, row.Alder_mdr), 0, 11);
+      row.Alder_mdr = normalizeOptionalIntValue(src.Alder_mdr, 0, 11);
     }
     SCALE_NAMES.forEach((scale) => {
-      row[scale] = clamp(parseLocaleNumber(src[scale], row[scale]), 1, 14);
+      row[scale] = normalizeOptionalScoreValue(src[scale], 1, 14);
     });
   });
 
@@ -389,9 +389,9 @@ async function exportReportPdf() {
 
 function makeDefaultRows(count) {
   return Array.from({ length: count }, (_, i) => {
-    const row = { DPU: `DPU${i + 1}`, Alder_år: 0, Alder_mdr: 0 };
+    const row = { DPU: `DPU${i + 1}`, Alder_år: "", Alder_mdr: "" };
     SCALE_NAMES.forEach((scale) => {
-      row[scale] = 8.0;
+      row[scale] = "";
     });
     return row;
   });
@@ -428,11 +428,11 @@ function normalizeRows(rows, count) {
     const src = rows[idx] || {};
     const row = {
       DPU: String(src.DPU || defaultRow.DPU),
-      Alder_år: clampInt(parseLocaleNumber(src.Alder_år, defaultRow.Alder_år), 0, 18),
-      Alder_mdr: clampInt(parseLocaleNumber(src.Alder_mdr, defaultRow.Alder_mdr), 0, 11)
+      Alder_år: normalizeOptionalIntValue(src.Alder_år, 0, 18),
+      Alder_mdr: normalizeOptionalIntValue(src.Alder_mdr, 0, 11)
     };
     SCALE_NAMES.forEach((scale) => {
-      row[scale] = clamp(parseLocaleNumber(src[scale], defaultRow[scale]), 1, 14);
+      row[scale] = normalizeOptionalScoreValue(src[scale], 1, 14);
     });
     return row;
   });
@@ -452,7 +452,22 @@ function clampInt(value, min, max) {
   return Math.round(clamp(value, min, max));
 }
 
+function normalizeOptionalIntValue(value, min, max) {
+  if (value === null || value === undefined || String(value).trim() === "") return "";
+  const parsed = parseLocaleNumber(value, NaN);
+  if (!Number.isFinite(parsed)) return "";
+  return clampInt(parsed, min, max);
+}
+
+function normalizeOptionalScoreValue(value, min, max) {
+  if (value === null || value === undefined || String(value).trim() === "") return "";
+  const parsed = parseLocaleNumber(value, NaN);
+  if (!Number.isFinite(parsed)) return "";
+  return clamp(parsed, min, max);
+}
+
 function interpolateDevMonths(score) {
+  if (score === null || score === undefined || String(score).trim() === "") return NaN;
   const s = Number(score);
   if (!Number.isFinite(s)) return NaN;
   const keys = Object.keys(SCORE_TO_MONTHS).map(Number).sort((a, b) => a - b);
@@ -476,7 +491,8 @@ function calculateData() {
   const rows = normalizeRows(state.rows, state.numDpu);
   return rows.map((row) => {
     const result = { ...row };
-    result.Krono_mdr = row.Alder_år * 12 + row.Alder_mdr;
+    const hasValidAge = Number.isFinite(row.Alder_år) && Number.isFinite(row.Alder_mdr);
+    result.Krono_mdr = hasValidAge ? (row.Alder_år * 12 + row.Alder_mdr) : NaN;
 
     const diffs = [];
     const devs = [];
@@ -580,14 +596,14 @@ function renderInputTable() {
       return;
     }
     if (header === "Alder_år") {
-      state.rows[rowIndex][header] = clampInt(parseLocaleNumber(value, state.rows[rowIndex][header]), 0, 18);
+      state.rows[rowIndex][header] = normalizeOptionalIntValue(value, 0, 18);
       return;
     }
     if (header === "Alder_mdr") {
-      state.rows[rowIndex][header] = clampInt(parseLocaleNumber(value, state.rows[rowIndex][header]), 0, 11);
+      state.rows[rowIndex][header] = normalizeOptionalIntValue(value, 0, 11);
       return;
     }
-    state.rows[rowIndex][header] = clamp(parseLocaleNumber(value, state.rows[rowIndex][header]), 1, 14);
+    state.rows[rowIndex][header] = normalizeOptionalScoreValue(value, 1, 14);
   };
 
   const focusCell = (rowIndex, colIndex) => {
