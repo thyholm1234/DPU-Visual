@@ -696,6 +696,13 @@ function renderCharts(data) {
 
 function renderLineChart(container, labels, series, yLabel, options = {}) {
   const zeroLine = Object.prototype.hasOwnProperty.call(options, "zeroLine") ? options.zeroLine : null;
+  const ciBandOption = options.ciBand;
+  const hasCiBand = Boolean(ciBandOption
+    && Array.isArray(ciBandOption.lowValues)
+    && Array.isArray(ciBandOption.highValues)
+    && ciBandOption.lowValues.length === labels.length
+    && ciBandOption.highValues.length === labels.length);
+  const ciBandInitiallyVisible = hasCiBand ? ciBandOption.initiallyVisible !== false : false;
   const hasNumericXValues = Array.isArray(options.xValues)
     && options.xValues.length === labels.length
     && options.xValues.every((value) => Number.isFinite(value));
@@ -767,6 +774,42 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
     svg += `<line x1='${margin.left}' y1='${y}' x2='${margin.left + plotW}' y2='${y}' stroke='#64748b' stroke-dasharray='5 4'/>`;
   }
 
+  if (hasCiBand) {
+    const segments = [];
+    let currentSegment = [];
+    for (let i = 0; i < labels.length; i += 1) {
+      const low = ciBandOption.lowValues[i];
+      const high = ciBandOption.highValues[i];
+      if (Number.isFinite(low) && Number.isFinite(high)) {
+        currentSegment.push(i);
+      } else if (currentSegment.length) {
+        segments.push(currentSegment);
+        currentSegment = [];
+      }
+    }
+    if (currentSegment.length) {
+      segments.push(currentSegment);
+    }
+
+    const bandColor = ciBandOption.color || "#6b7280";
+    const bandOpacity = Number.isFinite(ciBandOption.opacity) ? ciBandOption.opacity : 0.2;
+    const visibilityAttr = ciBandInitiallyVisible ? "" : " style='display:none'";
+    segments.forEach((segment) => {
+      if (segment.length === 1) {
+        const idx = segment[0];
+        const x = xPos(idx);
+        const yLow = yPos(ciBandOption.lowValues[idx]);
+        const yHigh = yPos(ciBandOption.highValues[idx]);
+        svg += `<line data-ci-band='true' x1='${x}' y1='${yLow}' x2='${x}' y2='${yHigh}' stroke='${bandColor}' stroke-opacity='${Math.min(1, bandOpacity + 0.25)}' stroke-width='6'${visibilityAttr} />`;
+        return;
+      }
+
+      const lowPath = segment.map((idx) => `${xPos(idx)},${yPos(ciBandOption.lowValues[idx])}`);
+      const highPath = [...segment].reverse().map((idx) => `${xPos(idx)},${yPos(ciBandOption.highValues[idx])}`);
+      svg += `<polygon data-ci-band='true' points='${[...lowPath, ...highPath].join(" ")}' fill='${bandColor}' fill-opacity='${bandOpacity}' stroke='none'${visibilityAttr} />`;
+    });
+  }
+
   series.forEach((s, seriesIdx) => {
     const visible = s.initiallyVisible !== false;
     const visibilityAttr = visible ? "" : " style='display:none'";
@@ -791,7 +834,10 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
       return `<span class='${itemClass}' role='button' tabindex='0' aria-pressed='${visible ? "true" : "false"}' data-series-index='${idx}'><span class='${lineClass}'></span>${escapeXml(s.name)}</span>`;
     })
     .join("");
-  container.innerHTML = `<div class='chart-shell'><div class='chart-legend'>${legend}</div>${svg}</div>`;
+  const ciToggle = hasCiBand
+    ? `<button type='button' class='chart-ci-toggle' aria-pressed='${ciBandInitiallyVisible ? "true" : "false"}'>${ciBandInitiallyVisible ? "Skjul" : "Vis"} ${escapeXml(ciBandOption.label || CI_LABEL)}</button>`
+    : "";
+  container.innerHTML = `<div class='chart-shell'><div class='chart-head'>${ciToggle}<div class='chart-legend'>${legend}</div></div>${svg}</div>`;
 
   const setSeriesVisible = (seriesIndex, visible) => {
     const chartElements = container.querySelectorAll(`.chart-svg [data-series-index='${seriesIndex}']`);
@@ -820,6 +866,22 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
       }
     });
   });
+
+  const ciToggleBtn = container.querySelector(".chart-ci-toggle");
+  if (ciToggleBtn) {
+    const setCiBandVisible = (visible) => {
+      container.querySelectorAll(".chart-svg [data-ci-band='true']").forEach((element) => {
+        element.style.display = visible ? "" : "none";
+      });
+      ciToggleBtn.setAttribute("aria-pressed", visible ? "true" : "false");
+      ciToggleBtn.textContent = `${visible ? "Skjul" : "Vis"} ${ciBandOption.label || CI_LABEL}`;
+    };
+
+    ciToggleBtn.addEventListener("click", () => {
+      const isVisible = ciToggleBtn.getAttribute("aria-pressed") !== "false";
+      setCiBandVisible(!isVisible);
+    });
+  }
 }
 
 function renderStats(data) {
@@ -1303,22 +1365,22 @@ function renderDeviationCharts(data) {
         name: "Afvigelse total (mdr)",
         values: dataByAge.map((row) => row.Afvigelse_mdr_gns),
         colorClass: "series-color-1"
-      },
-      {
-        name: `${CI_LABEL} lav`,
-        values: totalDeviationCiByDpu.map((ci) => round1(ci.low)),
-        colorClass: "series-color-muted",
-        dashed: true
-      },
-      {
-        name: `${CI_LABEL} høj`,
-        values: totalDeviationCiByDpu.map((ci) => round1(ci.high)),
-        colorClass: "series-color-muted",
-        dashed: true
       }
     ],
     "Afvigelse (mdr)",
-    { zeroLine: 0, height: 280, xValues: dataByAge.map((row) => row.Krono_mdr) }
+    {
+      zeroLine: 0,
+      height: 280,
+      xValues: dataByAge.map((row) => row.Krono_mdr),
+      ciBand: {
+        label: CI_LABEL,
+        lowValues: totalDeviationCiByDpu.map((ci) => round1(ci.low)),
+        highValues: totalDeviationCiByDpu.map((ci) => round1(ci.high)),
+        color: "#6b7280",
+        opacity: 0.2,
+        initiallyVisible: true
+      }
+    }
   );
   container.appendChild(dpuBox);
 
@@ -1351,22 +1413,21 @@ function renderDeviationCharts(data) {
         name: "Gns afvigelse (mdr)",
         values: deviationStatsByScale.map((entry) => round1(entry.mean)),
         colorClass: "series-color-3"
-      },
-      {
-        name: `${CI_LABEL} lav`,
-        values: deviationStatsByScale.map((entry) => round1(entry.low)),
-        colorClass: "series-color-muted",
-        dashed: true
-      },
-      {
-        name: `${CI_LABEL} høj`,
-        values: deviationStatsByScale.map((entry) => round1(entry.high)),
-        colorClass: "series-color-muted",
-        dashed: true
       }
     ],
     "Afvigelse (mdr)",
-    { zeroLine: 0, height: 300 }
+    {
+      zeroLine: 0,
+      height: 300,
+      ciBand: {
+        label: CI_LABEL,
+        lowValues: deviationStatsByScale.map((entry) => round1(entry.low)),
+        highValues: deviationStatsByScale.map((entry) => round1(entry.high)),
+        color: "#6b7280",
+        opacity: 0.2,
+        initiallyVisible: true
+      }
+    }
   );
   container.appendChild(scaleBox);
 }

@@ -199,11 +199,30 @@ th {
   background: #ffffff;
 }
 
+.chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
 .chart-legend {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0;
+}
+
+.chart-ci-toggle {
+  font-size: 0.72rem;
+  padding: 0.14rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid #dbe3ef;
+  background: #f8fafc;
+  color: #334155;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .legend-item {
