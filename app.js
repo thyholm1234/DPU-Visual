@@ -972,6 +972,7 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
 }
 
 function renderStats(data) {
+  renderSummaryOverview(data);
   renderDeviationSummaries(data);
   renderDeviationCharts(data);
   renderAgeCiSummary(data);
@@ -989,6 +990,75 @@ function renderStats(data) {
   if (dpuContainer) {
     dpuContainer.innerHTML = "";
   }
+}
+
+function renderSummaryOverview(data) {
+  const container = document.getElementById("summaryOverview");
+  if (!container) return;
+  if (!data.length) {
+    container.innerHTML = "<p class='small'>Ingen data.</p>";
+    return;
+  }
+
+  const sorted = [...data].sort((a, b) => a.Krono_mdr - b.Krono_mdr);
+  const last = sorted[sorted.length - 1];
+
+  const totalDeviationCi = meanCi(data.map((row) => row.Afvigelse_mdr_gns));
+  const totalTrend = linearTrend(
+    data.map((row) => row.Krono_mdr),
+    data.map((row) => row.Udviklingsalder_mdr_gns)
+  );
+  const totalEffect = fitMagnitudeLabel(totalTrend.rSquared);
+  const totalEstimatedAge = Number.isFinite(totalDeviationCi.mean)
+    ? last.Krono_mdr + totalDeviationCi.mean
+    : NaN;
+
+  const scaleCards = SCALE_NAMES.map((scale) => {
+    const deviationValues = data.map((row) => row[`Afvigelse_mdr_${scale}`]).filter((v) => Number.isFinite(v));
+    const deviationCi = meanCi(deviationValues);
+    const trend = linearTrend(
+      data.map((row) => row.Krono_mdr),
+      data.map((row) => row[`Udviklingsalder_mdr_${scale}`])
+    );
+
+    return {
+      scale,
+      deviationMean: deviationCi.mean,
+      slopePerYear: trend.slopePerYear,
+      effect: fitMagnitudeLabel(trend.rSquared)
+    };
+  });
+
+  const renderMetric = (label, value) => `
+    <div class='summary-metric'>
+      <span class='summary-metric-label'>${escapeHtml(label)}</span>
+      <span class='summary-metric-value'>${escapeHtml(value)}</span>
+    </div>
+  `;
+
+  container.innerHTML = `
+    <div class='chart summary-overview'>
+      <div class='summary-layout'>
+        <article class='summary-tile summary-tile-main'>
+          <div class='summary-title'>Hele skala alder</div>
+          ${renderMetric("Estimeret alder", `${fmt(totalEstimatedAge)} mdr`) }
+          ${renderMetric("Hældning", `${fmt(totalTrend.slopePerYear)} mdr/år`) }
+          ${renderMetric("Effektstørrelse", totalEffect) }
+        </article>
+
+        <div class='summary-grid'>
+          ${scaleCards.map((card) => `
+            <article class='summary-tile summary-tile-scale'>
+              <div class='summary-title'>${escapeHtml(card.scale)}</div>
+              ${renderMetric("Afvigelse", `${fmt(card.deviationMean)} mdr`) }
+              ${renderMetric("Hældning", `${fmt(card.slopePerYear)} mdr/år`) }
+              ${renderMetric("Effektstørrelse", card.effect) }
+            </article>
+          `).join("")}
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function renderLastDpuCiReferenceChart(data) {
