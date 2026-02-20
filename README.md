@@ -10,7 +10,7 @@ Denne version er 100% client-side:
 Fra projektroden:
 
 ```powershell
-cd "c:\Users\chris\Documents\DPU Visual"
+cd "c:\Users\user\Documents\DPU Visual"
 python -m http.server 8073
 ```
 
