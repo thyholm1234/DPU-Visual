@@ -1291,6 +1291,10 @@ function renderDeviationCharts(data) {
   const dpuHost = document.createElement("div");
   dpuBox.appendChild(dpuHost);
   const dataByAge = [...data].sort((a, b) => a.Krono_mdr - b.Krono_mdr);
+  const totalDeviationCiByDpu = dataByAge.map((row) => {
+    const values = SCALE_NAMES.map((scale) => row[`Afvigelse_mdr_${scale}`]);
+    return meanCi(values);
+  });
   renderLineChart(
     dpuHost,
     dataByAge.map((row) => row.DPU),
@@ -1299,6 +1303,18 @@ function renderDeviationCharts(data) {
         name: "Afvigelse total (mdr)",
         values: dataByAge.map((row) => row.Afvigelse_mdr_gns),
         colorClass: "series-color-1"
+      },
+      {
+        name: `${CI_LABEL} lav`,
+        values: totalDeviationCiByDpu.map((ci) => round1(ci.low)),
+        colorClass: "series-color-muted",
+        dashed: true
+      },
+      {
+        name: `${CI_LABEL} høj`,
+        values: totalDeviationCiByDpu.map((ci) => round1(ci.high)),
+        colorClass: "series-color-muted",
+        dashed: true
       }
     ],
     "Afvigelse (mdr)",
