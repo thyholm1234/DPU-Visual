@@ -156,7 +156,7 @@ importCsvEl.addEventListener("change", async (event) => {
   const rows = normalizeRows([], importedCount);
   parsed.rows.slice(0, importedCount).forEach((src, idx) => {
     const row = rows[idx];
-    row.DPU = String(src.DPU || row.DPU);
+    row.DPU = sanitizeCsvCell(String(src.DPU || row.DPU));
     row.Alder_år = clampInt(parseLocaleNumber(src.Alder_år, row.Alder_år), 0, 18);
     if (parsed.hasMonthColumn && src.Alder_mdr !== undefined) {
       row.Alder_mdr = clampInt(parseLocaleNumber(src.Alder_mdr, row.Alder_mdr), 0, 11);
@@ -179,7 +179,7 @@ exportCsvEl.addEventListener("click", () => {
     const cells = headers.map((h) => {
       const value = row[h] ?? "";
       if (typeof value === "number") return String(value).replace(".", ",");
-      return String(value);
+      return sanitizeCsvCell(value);
     });
     lines.push(cells.join(";"));
   });
@@ -192,6 +192,17 @@ exportCsvEl.addEventListener("click", () => {
   a.click();
   URL.revokeObjectURL(url);
 });
+
+function sanitizeCsvCell(value) {
+  const text = String(value ?? "");
+  const withoutLeadingWhitespace = text.replace(/^[\u0000-\u001F\s]+/, "");
+  if (!withoutLeadingWhitespace) return text;
+  const firstChar = withoutLeadingWhitespace[0];
+  if (firstChar === "=" || firstChar === "+" || firstChar === "-" || firstChar === "@") {
+    return `'${text}`;
+  }
+  return text;
+}
 
 exportPdfEl.addEventListener("click", async () => {
   await exportReportPdf();
