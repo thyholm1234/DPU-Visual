@@ -703,7 +703,7 @@ function renderComputedTable(data) {
       } else if (h === "n") {
         td.textContent = String(Math.round(value));
       } else {
-        td.textContent = String(value).replace(".", ",");
+        td.textContent = fmt(value);
       }
       tr.appendChild(td);
     });
@@ -1939,7 +1939,10 @@ function splitCsvLine(line, delimiter) {
 
 function fmt(n) {
   if (!Number.isFinite(n)) return "-";
-  return n.toFixed(2).replace(".", ",");
+  const rounded = Math.round(n * 100) / 100;
+  let text = rounded.toFixed(2).replace(".", ",");
+  text = text.replace(/,(\d*[1-9])0+$/, ",$1").replace(/,0+$/, "");
+  return text;
 }
 
 function formatMonthsAsYearMonth(monthValue) {
