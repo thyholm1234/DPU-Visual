@@ -520,15 +520,30 @@ function renderInputTable() {
   const rows = normalizeRows(state.rows, state.numDpu);
   state.rows = rows;
   const headers = ["DPU", "Alder_år", "Alder_mdr", ...SCALE_NAMES];
+  const scaleShortHeaders = [
+    "Opmærks.",
+    "Hukomm.",
+    "Leg og akt.",
+    "Sprog og kom.",
+    "Soc. komp.",
+    "Selvreg.",
+    "Grovmot.",
+    "Finmot.",
+    "Færdigh. daglig."
+  ];
+  const displayHeaders = ["DPU", "Alder_år", "Alder_mdr", ...scaleShortHeaders];
 
   const table = document.createElement("table");
   table.className = "input-spreadsheet";
   const thead = document.createElement("thead");
   const headRow = document.createElement("tr");
-  headers.forEach((h) => {
+  headers.forEach((h, idx) => {
     const th = document.createElement("th");
-    th.textContent = h;
+    th.textContent = displayHeaders[idx] || h;
     th.setAttribute("aria-label", h);
+    if (displayHeaders[idx] && displayHeaders[idx] !== h) {
+      th.title = h;
+    }
     headRow.appendChild(th);
   });
   thead.appendChild(headRow);

@@ -181,6 +181,13 @@ th {
   white-space: nowrap;
 }
 
+.input-spreadsheet th {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.25;
+}
+
 .input-spreadsheet th:nth-child(1),
 .input-spreadsheet td:nth-child(1) {
   width: 220px;
