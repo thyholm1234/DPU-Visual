@@ -444,6 +444,9 @@ th {
   stroke: var(--series-color, #2563eb);
   stroke-linecap: round;
   stroke-linejoin: round;
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: chart-raise 0.62s cubic-bezier(0.2, 0.75, 0.2, 1) both;
 }
 
 .chart-svg .series-line.dashed {
@@ -452,6 +455,47 @@ th {
 
 .chart-svg .series-point {
   fill: var(--series-color, #2563eb);
+  animation: chart-point-in 0.35s ease-out 0.16s both;
+}
+
+.chart-svg [data-ci-band="true"] {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: chart-raise 0.72s cubic-bezier(0.2, 0.75, 0.2, 1) both;
+}
+
+@keyframes chart-raise {
+  0% {
+    transform: scaleY(0.02);
+    opacity: 0.15;
+  }
+  75% {
+    transform: scaleY(1.04);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes chart-point-in {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-svg .series-line,
+  .chart-svg .series-point,
+  .chart-svg [data-ci-band="true"] {
+    animation: none !important;
+  }
 }
 
 .series-color-0 { --series-color: #2563eb; color: #2563eb; }
