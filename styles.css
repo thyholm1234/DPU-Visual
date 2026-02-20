@@ -7,6 +7,9 @@
   --st-primary: #ff4b4b;
   --st-primary-hover: #ff2f2f;
   --st-focus: #9ec5ff;
+  --st-radius-card: 0.9rem;
+  --st-radius-control: 0.7rem;
+  --st-radius-pill: 9999px;
 }
 
 * {
@@ -31,24 +34,27 @@ body {
 h1,
 h2,
 h3 {
-  margin: 0 0 0.55rem;
+  margin: 0 0 0.6rem;
   font-weight: 600;
   letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: #1f2937;
 }
 
 h1 {
-  font-size: 2rem;
-  margin-bottom: 0.35rem;
+  font-size: 1.9rem;
+  margin-bottom: 0.5rem;
 }
 
 h2 {
   font-size: 1.25rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.7rem;
 }
 
 h3 {
   font-size: 1rem;
-  color: #31333f;
+  margin-bottom: 0.6rem;
+  color: #2a2a2d;
 }
 
 label {
@@ -62,10 +68,10 @@ label {
 .card {
   background: var(--st-bg);
   border: 1px solid var(--st-border);
-  border-radius: 0.5rem;
+  border-radius: var(--st-radius-card);
   padding: 1rem 1rem 1.1rem;
   margin-bottom: 1rem;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.02), 0 8px 24px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.02), 0 6px 18px rgba(15, 23, 42, 0.05);
 }
 
 .notice {
@@ -92,7 +98,7 @@ textarea {
   width: 100%;
   min-height: 2.35rem;
   border: 1px solid var(--st-border);
-  border-radius: 0.5rem;
+  border-radius: var(--st-radius-control);
   padding: 0.45rem 0.65rem;
   background: #fff;
   color: var(--st-text);
@@ -118,9 +124,9 @@ button {
   border: 1px solid transparent;
   background: var(--st-primary);
   color: #fff;
-  border-radius: 0.5rem;
-  min-height: 2.35rem;
-  padding: 0.45rem 0.9rem;
+  border-radius: var(--st-radius-pill);
+  min-height: 2.4rem;
+  padding: 0.45rem 1rem;
   font-weight: 600;
   letter-spacing: 0.01em;
   cursor: pointer;
@@ -138,6 +144,28 @@ button:active {
 button:focus-visible {
   outline: 2px solid var(--st-focus);
   outline-offset: 2px;
+}
+
+input[type="file"]::file-selector-button {
+  border: 1px solid transparent;
+  background: var(--st-primary);
+  color: #fff;
+  border-radius: var(--st-radius-pill);
+  min-height: 2.1rem;
+  padding: 0.38rem 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  margin-right: 0.55rem;
+  transition: background-color 0.12s ease, transform 0.08s ease;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background: var(--st-primary-hover);
+}
+
+input[type="file"]::file-selector-button:active {
+  transform: translateY(1px);
 }
 
 table {
@@ -230,21 +258,25 @@ th {
 
 .chart {
   border: 1px solid var(--st-border);
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   padding: 0.65rem;
   background: #fff;
 }
 
 .scale-chart-title {
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 600;
   color: #1f2937;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+#deviationCharts {
+  margin-bottom: 0.95rem;
 }
 
 .chart-shell {
   border: 1px solid #e8eef7;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   padding: 0.45rem 0.55rem 0.25rem;
   margin-bottom: 0.5rem;
   background: #ffffff;
