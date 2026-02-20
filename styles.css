@@ -22,6 +22,17 @@
 
 @font-face {
   font-family: "HelveticaNowTextDemo";
+  src:
+    url("vendor/Fonts/helvetica-now-text-regular.woff2") format("woff2"),
+    url("vendor/Fonts/helvetica-now-text-regular.woff") format("woff"),
+    url("vendor/Fonts/helvetica-now-text-regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "HelveticaNowTextDemo";
   src: url("vendor/Fonts/helveticanowtext-bold-demo.ttf") format("truetype");
   font-weight: 700;
   font-style: normal;
@@ -58,7 +69,7 @@
 
 body {
   margin: 0;
-  font-family: "Twklausanne", "Inter", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+  font-family: "HelveticaNowTextDemo", "Twklausanne", "Inter", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
   font-size: 14px;
   line-height: 1.45;
   background: var(--st-app-bg);
