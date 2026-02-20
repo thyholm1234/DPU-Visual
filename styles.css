@@ -369,8 +369,12 @@ th {
 }
 
 #deviationCharts {
-  max-width: 1100px;
-  margin: 0 auto 0.95rem;
+  max-width: none;
+  margin: 0 0 0.95rem;
+}
+
+#deviationCharts .scale-chart-title {
+  text-align: left;
 }
 
 .section-title-centered,
