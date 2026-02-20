@@ -1012,6 +1012,7 @@ function renderStats(data) {
   renderSummaryOverview(data);
   renderDeviationSummaries(data);
   renderDeviationCharts(data);
+  renderScaleDeviationChart(data);
   renderAgeCiSummary(data);
   renderEstimatedAgeAtLastMeasurement(data);
   renderLastDpuCiReferenceChart(data);
@@ -1629,14 +1630,12 @@ function renderDeviationCharts(data) {
   );
   container.appendChild(relativeDpuBox);
 
-  const scaleBox = document.createElement("div");
-  scaleBox.className = "chart";
-  const scaleTitle = document.createElement("div");
-  scaleTitle.className = "scale-chart-title";
-  scaleTitle.textContent = "Gennemsnitlig afvigelse pr. skala";
-  scaleBox.appendChild(scaleTitle);
-  const scaleHost = document.createElement("div");
-  scaleBox.appendChild(scaleHost);
+}
+
+function renderScaleDeviationChart(data) {
+  const container = document.getElementById("scaleDeviationChart");
+  if (!container) return;
+  container.innerHTML = "";
 
   const deviationStatsByScale = SCALE_NAMES.map((scale) => {
     const vals = data
@@ -1651,7 +1650,7 @@ function renderDeviationCharts(data) {
   });
 
   renderLineChart(
-    scaleHost,
+    container,
     SCALE_NAMES,
     [
       {
@@ -1674,7 +1673,6 @@ function renderDeviationCharts(data) {
       }
     }
   );
-  container.appendChild(scaleBox);
 }
 
 function renderDeviationSummaries(data) {
