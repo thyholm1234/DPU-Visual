@@ -2033,11 +2033,9 @@ function isCompleteAndValidRow(row) {
 
 function getDataReadiness(rows) {
   const completeRows = rows.filter(isCompleteAndValidRow).length;
-  const hasAtLeastTwoComplete = completeRows >= 2;
-  const allRowsComplete = completeRows === rows.length;
 
   return {
-    ready: hasAtLeastTwoComplete && allRowsComplete,
+    ready: completeRows >= 2,
     completeRows,
     totalRows: rows.length
   };
@@ -2061,6 +2059,7 @@ function rerender() {
 
 function rerenderDataViews() {
   const rows = normalizeRows(state.rows, state.numDpu);
+  const validRows = rows.filter(isCompleteAndValidRow);
   const readiness = getDataReadiness(rows);
   if (!readiness.ready) {
     setDataSectionsVisible(false);
@@ -2068,7 +2067,7 @@ function rerenderDataViews() {
   }
 
   setDataSectionsVisible(true);
-  const data = calculateData(rows);
+  const data = calculateData(validRows);
   renderComputedTable(data);
   renderCharts(data);
   renderStats(data);
