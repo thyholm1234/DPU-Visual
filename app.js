@@ -1639,6 +1639,47 @@ function renderDeviationCharts(data) {
   );
   container.appendChild(scaleBox);
 
+  const relativeScaleSectionTitle = document.createElement("div");
+  relativeScaleSectionTitle.className = "scale-chart-title";
+  relativeScaleSectionTitle.textContent = "Relativ afvigelse fra kronologisk alder pr. skala (%)";
+  container.appendChild(relativeScaleSectionTitle);
+
+  SCALE_NAMES.forEach((scale) => {
+    const box = document.createElement("div");
+    box.className = "chart";
+
+    const title = document.createElement("div");
+    title.className = "scale-chart-title";
+    title.textContent = scale;
+    box.appendChild(title);
+
+    const host = document.createElement("div");
+    box.appendChild(host);
+
+    renderLineChart(
+      host,
+      dataByAge.map((row) => row.DPU),
+      [
+        {
+          name: "Relativ afvigelse (%)",
+          values: dataByAge.map((row) => {
+            if (!Number.isFinite(row.Krono_mdr) || row.Krono_mdr <= 0) return NaN;
+            return (row[`Afvigelse_mdr_${scale}`] / row.Krono_mdr) * 100;
+          }),
+          colorClass: "series-color-3"
+        }
+      ],
+      "Afvigelse (%)",
+      {
+        zeroLine: 0,
+        height: 280,
+        xValues: dataByAge.map((row) => row.Krono_mdr)
+      }
+    );
+
+    container.appendChild(box);
+  });
+
 }
 
 function renderDeviationSummaries(data) {
