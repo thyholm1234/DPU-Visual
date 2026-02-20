@@ -108,12 +108,9 @@ const exportCsvEl = document.getElementById("exportCsv");
 const exportPdfEl = document.getElementById("exportPdf");
 const resetBtnEl = document.getElementById("resetBtn");
 const exampleBtnEl = document.getElementById("exampleBtn");
-const applyPasteEl = document.getElementById("applyPaste");
-const pasteAreaEl = document.getElementById("pasteArea");
 
 numDpuEl.value = String(state.numDpu);
 numDpuEl.setAttribute("autocomplete", "off");
-pasteAreaEl.setAttribute("autocomplete", "off");
 
 window.addEventListener("pageshow", () => {
   resetState();
@@ -135,37 +132,6 @@ resetBtnEl.addEventListener("click", () => {
 exampleBtnEl.addEventListener("click", () => {
   state.numDpu = EXAMPLE_ROWS.length;
   state.rows = normalizeRows(EXAMPLE_ROWS, EXAMPLE_ROWS.length);
-  pasteAreaEl.value = "";
-  rerender();
-});
-
-applyPasteEl.addEventListener("click", () => {
-  const lines = pasteAreaEl.value.split(/\r?\n/).filter(Boolean);
-  if (!lines.length) return;
-
-  const rows = normalizeRows(state.rows, state.numDpu);
-  lines.slice(0, state.numDpu).forEach((line, rowIdx) => {
-    const cols = line.split("\t");
-    if (!cols.length) return;
-
-    const hasMonthColumn = cols.length - 3 >= SCALE_NAMES.length;
-    const scoreStartIndex = hasMonthColumn ? 3 : 2;
-
-    if (cols[0] !== undefined && cols[0].trim()) rows[rowIdx].DPU = cols[0].trim();
-    if (cols[1] !== undefined) rows[rowIdx].Alder_år = clampInt(parseLocaleNumber(cols[1], rows[rowIdx].Alder_år), 0, 18);
-    if (hasMonthColumn && cols[2] !== undefined) {
-      rows[rowIdx].Alder_mdr = clampInt(parseLocaleNumber(cols[2], rows[rowIdx].Alder_mdr), 0, 11);
-    }
-
-    SCALE_NAMES.forEach((scale, idx) => {
-      const colIdx = idx + scoreStartIndex;
-      if (cols[colIdx] !== undefined) {
-        rows[rowIdx][scale] = clamp(parseLocaleNumber(cols[colIdx], rows[rowIdx][scale]), 1, 14);
-      }
-    });
-  });
-
-  state.rows = rows;
   rerender();
 });
 
@@ -554,24 +520,15 @@ function renderInputTable() {
   const rows = normalizeRows(state.rows, state.numDpu);
   state.rows = rows;
   const headers = ["DPU", "Alder_år", "Alder_mdr", ...SCALE_NAMES];
-  const displayHeaders = [
-    "Navn",
-    "År",
-    "Mdr",
-    ...SCALE_NAMES.map((_, idx) => `S${idx + 1}`)
-  ];
 
   const table = document.createElement("table");
   table.className = "input-spreadsheet";
   const thead = document.createElement("thead");
   const headRow = document.createElement("tr");
-  headers.forEach((h, idx) => {
+  headers.forEach((h) => {
     const th = document.createElement("th");
-    th.textContent = displayHeaders[idx];
-    if (h !== "DPU") {
-      th.title = h;
-      th.setAttribute("aria-label", h);
-    }
+    th.textContent = h;
+    th.setAttribute("aria-label", h);
     headRow.appendChild(th);
   });
   thead.appendChild(headRow);
@@ -615,7 +572,7 @@ function renderInputTable() {
       td.contentEditable = "true";
       td.spellcheck = false;
       td.setAttribute("role", "gridcell");
-      td.setAttribute("aria-label", `${displayHeaders[cIdx]} række ${rIdx + 1}`);
+      td.setAttribute("aria-label", `${headers[cIdx]} række ${rIdx + 1}`);
       td.dataset.row = String(rIdx);
       td.dataset.col = String(cIdx);
       const value = row[h];
