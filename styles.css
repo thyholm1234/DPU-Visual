@@ -12,13 +12,53 @@
   --st-radius-pill: 9999px;
 }
 
+@font-face {
+  font-family: "Twklausanne";
+  src: local("TwkLausanne-400"), local("Twklausanne 400"), local("Twklausanne");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "HelveticaNowTextDemo";
+  src: url("vendor/Fonts/helveticanowtext-bold-demo.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "HelveticaNowTextDemo";
+  src: url("vendor/Fonts/helveticanowtext-bolditalic-demo.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "HelveticaNowTextDemo";
+  src: url("vendor/Fonts/helveticanowtext-black-demo.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "HelveticaNowTextDemo";
+  src: url("vendor/Fonts/helveticanowtext-blackitalic-demo.ttf") format("truetype");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: "Inter", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+  font-family: "Twklausanne", "Inter", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
   font-size: 14px;
   line-height: 1.45;
   background: var(--st-app-bg);
@@ -31,9 +71,19 @@ body {
   padding: 1.25rem 1.5rem 2.5rem;
 }
 
+.page-intro {
+  padding: 1.15rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.page-intro h1 {
+  margin-bottom: 0.55rem;
+}
+
 h1,
 h2,
 h3 {
+  font-family: "HelveticaNowTextDemo", "Twklausanne", "Inter", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
   margin: 0 0 0.6rem;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -81,6 +131,13 @@ label {
   border: 1px solid #d6ebff;
   border-radius: 0.5rem;
   padding: 0.65rem 0.8rem;
+  line-height: 1.55;
+}
+
+.page-intro .notice {
+  margin: 0;
+  border-radius: 0.7rem;
+  background: #f7fbff;
 }
 
 .controls {
@@ -121,6 +178,7 @@ textarea:focus {
 }
 
 button {
+  font-family: "HelveticaNowTextDemo", "Twklausanne", "Inter", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
   border: 1px solid transparent;
   background: var(--st-primary);
   color: #fff;
@@ -147,6 +205,7 @@ button:focus-visible {
 }
 
 input[type="file"]::file-selector-button {
+  font-family: "HelveticaNowTextDemo", "Twklausanne", "Inter", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
   border: 1px solid transparent;
   background: var(--st-primary);
   color: #fff;
