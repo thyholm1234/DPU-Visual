@@ -1041,7 +1041,9 @@ function renderSummaryOverview(data) {
       <div class='summary-layout'>
         <article class='summary-tile summary-tile-main'>
           <div class='summary-title'>Hele skala alder</div>
-          ${renderMetric("Estimeret alder", `${fmt(totalEstimatedAge)} mdr`) }
+          ${renderMetric("Kronologisk alder", formatMonthsAsYearMonth(last.Krono_mdr)) }
+          ${renderMetric("Estimeret alder", formatMonthsAsYearMonth(totalEstimatedAge)) }
+          ${renderMetric("Afvigelse", formatMonthsAsYearMonth(totalDeviationCi.mean)) }
           ${renderMetric("Hældning", `${fmt(totalTrend.slopePerYear)} mdr/år`) }
           ${renderMetric("Effektstørrelse", totalEffect) }
         </article>
@@ -1882,6 +1884,15 @@ function splitCsvLine(line, delimiter) {
 function fmt(n) {
   if (!Number.isFinite(n)) return "-";
   return n.toFixed(2).replace(".", ",");
+}
+
+function formatMonthsAsYearMonth(monthValue) {
+  if (!Number.isFinite(monthValue)) return "-";
+  const sign = monthValue < 0 ? "-" : "";
+  const totalMonths = Math.round(Math.abs(monthValue));
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  return `${sign}${years}:${months}`;
 }
 
 function escapeHtml(s) {
