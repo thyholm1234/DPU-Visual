@@ -367,7 +367,7 @@ async function exportReportPdf() {
 
 function makeDefaultRows(count) {
   return Array.from({ length: count }, (_, i) => {
-    const row = { DPU: `DPU_${i + 1}`, Alder_år: 0, Alder_mdr: 0 };
+    const row = { DPU: `DPU${i + 1}`, Alder_år: 0, Alder_mdr: 0 };
     SCALE_NAMES.forEach((scale) => {
       row[scale] = 8.0;
     });
