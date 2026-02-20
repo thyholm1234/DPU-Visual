@@ -1651,7 +1651,7 @@ function renderStatsTable(container, rows, firstColLabel) {
   `;
   container.innerHTML = "";
   const wrap = document.createElement("div");
-  wrap.className = "table-wrap";
+  wrap.className = "table-wrap spaced";
   wrap.appendChild(table);
   container.appendChild(wrap);
 }
