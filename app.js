@@ -714,7 +714,10 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
   const plotW = width - margin.left - margin.right;
   const plotH = height - margin.top - margin.bottom;
 
-  const values = series.flatMap((s) => s.values).filter((v) => Number.isFinite(v));
+  const values = [
+    ...series.flatMap((s) => s.values),
+    ...(hasCiBand ? [...ciBandOption.lowValues, ...ciBandOption.highValues] : [])
+  ].filter((v) => Number.isFinite(v));
   if (!values.length) {
     container.innerHTML = "<p class='small'>Ingen data</p>";
     return;
