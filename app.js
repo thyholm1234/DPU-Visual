@@ -769,6 +769,31 @@ function renderCharts(data) {
       { height: 280, xValues: dataByAge.map((r) => r.Krono_mdr) }
     );
 
+    const relativeLabel = document.createElement("div");
+    relativeLabel.className = "small";
+    relativeLabel.textContent = "Relativ afvigelse ift. kronologisk alder (%)";
+    box.appendChild(relativeLabel);
+
+    const relativeHost = document.createElement("div");
+    box.appendChild(relativeHost);
+
+    renderLineChart(
+      relativeHost,
+      dataByAge.map((r) => r.DPU),
+      [
+        {
+          name: "Relativ afvigelse (%)",
+          values: dataByAge.map((r) => {
+            if (!Number.isFinite(r.Krono_mdr) || r.Krono_mdr <= 0) return NaN;
+            return (r[`Afvigelse_mdr_${scale}`] / r.Krono_mdr) * 100;
+          }),
+          colorClass: "series-color-3"
+        }
+      ],
+      "Afvigelse (%)",
+      { height: 280, zeroLine: 0, xValues: dataByAge.map((r) => r.Krono_mdr) }
+    );
+
     crossContainer.appendChild(box);
   });
 }
@@ -1638,48 +1663,6 @@ function renderDeviationCharts(data) {
     }
   );
   container.appendChild(scaleBox);
-
-  const relativeScaleSectionTitle = document.createElement("div");
-  relativeScaleSectionTitle.className = "scale-chart-title";
-  relativeScaleSectionTitle.textContent = "Relativ afvigelse fra kronologisk alder pr. skala (%)";
-  container.appendChild(relativeScaleSectionTitle);
-
-  SCALE_NAMES.forEach((scale) => {
-    const box = document.createElement("div");
-    box.className = "chart";
-
-    const title = document.createElement("div");
-    title.className = "scale-chart-title";
-    title.textContent = scale;
-    box.appendChild(title);
-
-    const host = document.createElement("div");
-    box.appendChild(host);
-
-    renderLineChart(
-      host,
-      dataByAge.map((row) => row.DPU),
-      [
-        {
-          name: "Relativ afvigelse (%)",
-          values: dataByAge.map((row) => {
-            if (!Number.isFinite(row.Krono_mdr) || row.Krono_mdr <= 0) return NaN;
-            return (row[`Afvigelse_mdr_${scale}`] / row.Krono_mdr) * 100;
-          }),
-          colorClass: "series-color-3"
-        }
-      ],
-      "Afvigelse (%)",
-      {
-        zeroLine: 0,
-        height: 280,
-        xValues: dataByAge.map((row) => row.Krono_mdr)
-      }
-    );
-
-    container.appendChild(box);
-  });
-
 }
 
 function renderDeviationSummaries(data) {
