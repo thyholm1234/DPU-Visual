@@ -19,6 +19,9 @@ const COLORS = ["#2563eb", "#dc2626", "#059669", "#7c3aed", "#d97706", "#0891b2"
 const COLOR_CLASS = COLORS.map((_, idx) => `series-color-${idx}`);
 const DEFAULT_DPU = 2;
 const PDF_RENDER_WIDTH = 1160;
+const PDF_CHART_CAPTURE_SCALE = 1.2;
+const PDF_CHART_IMAGE_TYPE = "JPEG";
+const PDF_CHART_IMAGE_QUALITY = 0.86;
 const LEGACY_STORAGE_KEYS = ["dpu_client_only_state_v1", "dpu_state", "dpu_data"];
 const CI_LEVEL = 0.8;
 const CI_LABEL = `${Math.round(CI_LEVEL * 100)}% CI`;
@@ -211,6 +214,19 @@ exportPdfEl.addEventListener("click", async () => {
   await exportReportPdf();
 });
 
+function waitForAnimationFrames(count = 1) {
+  return new Promise((resolve) => {
+    const run = (remaining) => {
+      if (remaining <= 0) {
+        resolve();
+        return;
+      }
+      window.requestAnimationFrame(() => run(remaining - 1));
+    };
+    run(Math.max(1, count));
+  });
+}
+
 async function exportReportPdf() {
   const JsPdfCtor = window.jspdf?.jsPDF;
   if (typeof JsPdfCtor !== "function" || typeof window.html2canvas !== "function") {
@@ -227,7 +243,7 @@ async function exportReportPdf() {
 
   chartRenderWidthOverride = PDF_RENDER_WIDTH;
   rerender();
-  await new Promise((resolve) => window.requestAnimationFrame(resolve));
+  await waitForAnimationFrames(1);
 
   const renderHost = document.createElement("div");
   renderHost.className = "pdf-render-host";
@@ -238,7 +254,7 @@ async function exportReportPdf() {
   clone.querySelectorAll(".no-print").forEach((el) => el.remove());
   renderHost.appendChild(clone);
   document.body.appendChild(renderHost);
-  await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+  await waitForAnimationFrames(1);
 
   try {
     const pdf = new JsPdfCtor({
@@ -365,16 +381,17 @@ async function exportReportPdf() {
 
       if (block.type === "chart") {
         const canvas = await window.html2canvas(block.el, {
-          scale: 1.5,
+          scale: PDF_CHART_CAPTURE_SCALE,
           useCORS: true,
           backgroundColor: "#ffffff",
+          logging: false,
           windowWidth: PDF_RENDER_WIDTH
         });
         const imgWidth = contentWidth;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         ensureSpace(imgHeight + 6);
-        const imgData = canvas.toDataURL("image/png", 0.95);
-        pdf.addImage(imgData, "PNG", marginLeft, cursorY, imgWidth, imgHeight, undefined, "FAST");
+        const imgData = canvas.toDataURL(`image/${PDF_CHART_IMAGE_TYPE.toLowerCase()}`, PDF_CHART_IMAGE_QUALITY);
+        pdf.addImage(imgData, PDF_CHART_IMAGE_TYPE, marginLeft, cursorY, imgWidth, imgHeight, undefined, "FAST");
         cursorY += imgHeight + 6;
       }
     }
