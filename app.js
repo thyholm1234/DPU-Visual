@@ -637,6 +637,7 @@ function renderCharts(data) {
 
   const crossContainer = document.getElementById("crossCharts");
   crossContainer.innerHTML = "";
+  const dataByAge = [...data].sort((a, b) => a.Krono_mdr - b.Krono_mdr);
   SCALE_NAMES.forEach((scale) => {
     const box = document.createElement("div");
     box.className = "chart";
@@ -650,13 +651,13 @@ function renderCharts(data) {
 
     renderLineChart(
       host,
-      data.map((r) => r.DPU),
+      dataByAge.map((r) => r.DPU),
       [
-        { name: "DPU-alder", values: data.map((r) => r[`Udviklingsalder_mdr_${scale}`]), colorClass: "series-color-0" },
-        { name: "Kronologisk", values: data.map((r) => r.Krono_mdr), colorClass: "series-color-muted", dashed: true }
+        { name: "DPU-alder", values: dataByAge.map((r) => r[`Udviklingsalder_mdr_${scale}`]), colorClass: "series-color-0" },
+        { name: "Kronologisk", values: dataByAge.map((r) => r.Krono_mdr), colorClass: "series-color-muted", dashed: true }
       ],
       "Alder (mdr)",
-      { height: 280 }
+      { height: 280, xValues: dataByAge.map((r) => r.Krono_mdr) }
     );
 
     crossContainer.appendChild(box);
@@ -665,6 +666,10 @@ function renderCharts(data) {
 
 function renderLineChart(container, labels, series, yLabel, options = {}) {
   const zeroLine = Object.prototype.hasOwnProperty.call(options, "zeroLine") ? options.zeroLine : null;
+  const hasNumericXValues = Array.isArray(options.xValues)
+    && options.xValues.length === labels.length
+    && options.xValues.every((value) => Number.isFinite(value));
+  const xValues = hasNumericXValues ? options.xValues : labels.map((_, idx) => idx);
   const width = Math.max(360, chartRenderWidthOverride || container.clientWidth || container.parentElement?.clientWidth || 900);
   const height = options.height || 300;
   const hasLongLabels = labels.some((label) => String(label).length > 14);
@@ -689,7 +694,17 @@ function renderLineChart(container, labels, series, yLabel, options = {}) {
   maxY += pad;
   if (minY === maxY) maxY = minY + 1;
 
-  const xPos = (i) => margin.left + (labels.length === 1 ? plotW / 2 : (i * plotW) / (labels.length - 1));
+  let minX = Math.min(...xValues);
+  let maxX = Math.max(...xValues);
+  if (!Number.isFinite(minX) || !Number.isFinite(maxX)) {
+    minX = 0;
+    maxX = Math.max(labels.length - 1, 1);
+  }
+  if (minX === maxX) {
+    minX -= 0.5;
+    maxX += 0.5;
+  }
+  const xPos = (i) => margin.left + ((xValues[i] - minX) / (maxX - minX)) * plotW;
   const yPos = (v) => margin.top + ((maxY - v) / (maxY - minY)) * plotH;
 
   const ticks = 5;
@@ -1241,18 +1256,19 @@ function renderDeviationCharts(data) {
   dpuBox.appendChild(dpuTitle);
   const dpuHost = document.createElement("div");
   dpuBox.appendChild(dpuHost);
+  const dataByAge = [...data].sort((a, b) => a.Krono_mdr - b.Krono_mdr);
   renderLineChart(
     dpuHost,
-    data.map((row) => row.DPU),
+    dataByAge.map((row) => row.DPU),
     [
       {
         name: "Afvigelse total (mdr)",
-        values: data.map((row) => row.Afvigelse_mdr_gns),
+        values: dataByAge.map((row) => row.Afvigelse_mdr_gns),
         colorClass: "series-color-1"
       }
     ],
     "Afvigelse (mdr)",
-    { zeroLine: 0, height: 280 }
+    { zeroLine: 0, height: 280, xValues: dataByAge.map((row) => row.Krono_mdr) }
   );
   container.appendChild(dpuBox);
 
