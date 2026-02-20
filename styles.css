@@ -91,6 +91,20 @@ body {
   margin-bottom: 0.55rem;
 }
 
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.page-title-icon {
+  width: 1.55em;
+  height: 1.55em;
+  object-fit: contain;
+  flex: 0 0 auto;
+  border-radius: 0.28em;
+}
+
 h1,
 h2,
 h3 {
