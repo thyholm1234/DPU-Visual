@@ -1378,7 +1378,7 @@ function renderDeviationCharts(data) {
     "Afvigelse (mdr)",
     {
       zeroLine: 0,
-      height: 280,
+      height: 525,
       xValues: dataByAge.map((row) => row.Krono_mdr),
       ciBand: {
         label: CI_LABEL,
