@@ -744,9 +744,27 @@ function renderCharts(data) {
   }));
   renderLineChart(document.getElementById("chartCombinedDiff"), SCALE_NAMES, diffSeries, "Afvigelse (mdr)", { zeroLine: 0, height: 585 });
 
+  const dataByAge = [...data].sort((a, b) => a.Krono_mdr - b.Krono_mdr);
+  renderLineChart(
+    document.getElementById("chartDeviationVsChrono"),
+    dataByAge.map((row) => row.DPU),
+    [
+      {
+        name: "Afvigelse gns (mdr)",
+        values: dataByAge.map((row) => row.Afvigelse_mdr_gns),
+        colorClass: "series-color-1"
+      }
+    ],
+    "Afvigelse (mdr)",
+    {
+      zeroLine: 0,
+      height: 360,
+      xValues: dataByAge.map((row) => row.Krono_mdr)
+    }
+  );
+
   const crossContainer = document.getElementById("crossCharts");
   crossContainer.innerHTML = "";
-  const dataByAge = [...data].sort((a, b) => a.Krono_mdr - b.Krono_mdr);
   SCALE_NAMES.forEach((scale) => {
     const box = document.createElement("div");
     box.className = "chart";
