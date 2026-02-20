@@ -49,7 +49,7 @@ const EXAMPLE_ROWS = [
     "Selvregulering": 8.7,
     "Grovmotorik": 10.5,
     "Finmotorik": 10.5,
-    "Færdigheder i dagligdagen": 9.7
+    "Færdigheder i dagligdagen": 10.5
   },
   {
     DPU: "DPU3",
