@@ -259,6 +259,13 @@ async function exportReportPdf() {
       cursorY += textHeight + extraGap;
     };
 
+    const addHeadingTopGap = (gap) => {
+      if (gap <= 0) return;
+      if (cursorY <= marginTop + 1) return;
+      ensureSpace(gap);
+      cursorY += gap;
+    };
+
     const isInsideNoPrint = (el) => Boolean(el.closest(".no-print"));
 
     const blocks = [];
@@ -284,6 +291,7 @@ async function exportReportPdf() {
     for (const block of blocks) {
       if (block.type === "text") {
         if (block.tag === "h1") {
+          addHeadingTopGap(8);
           pdf.setFont("helvetica", "bold");
           pdf.setFontSize(17);
           const lines = pdf.splitTextToSize(block.text, contentWidth);
@@ -294,6 +302,7 @@ async function exportReportPdf() {
           continue;
         }
         if (block.tag === "h2") {
+          addHeadingTopGap(12);
           pdf.setFont("helvetica", "bold");
           pdf.setFontSize(13);
           const lines = pdf.splitTextToSize(block.text, contentWidth);
@@ -304,6 +313,7 @@ async function exportReportPdf() {
           continue;
         }
         if (block.tag === "h3") {
+          addHeadingTopGap(9);
           pdf.setFont("helvetica", "bold");
           pdf.setFontSize(11.5);
           const lines = pdf.splitTextToSize(block.text, contentWidth);
@@ -658,7 +668,7 @@ function renderInputTable() {
 }
 
 function renderComputedTable(data) {
-  const headers = ["DPU", "Krono_mdr", "Udviklingsalder_mdr_gns", "Afvigelse_mdr_gns"];
+  const headers = ["DPU", "Krono_mdr", "Udviklingsalder_mdr_gns", "Afvigelse_mdr_gns", "n", "80% CI lav", "80% CI høj"];
   const table = document.createElement("table");
   const thead = document.createElement("thead");
   const htr = document.createElement("tr");
@@ -672,10 +682,29 @@ function renderComputedTable(data) {
 
   const tbody = document.createElement("tbody");
   data.forEach((row) => {
+    const values = SCALE_NAMES.map((scale) => row[`Afvigelse_mdr_${scale}`]);
+    const ci = meanCi(values);
+    const mergedRow = {
+      DPU: row.DPU,
+      Krono_mdr: row.Krono_mdr,
+      Udviklingsalder_mdr_gns: row.Udviklingsalder_mdr_gns,
+      Afvigelse_mdr_gns: row.Afvigelse_mdr_gns,
+      n: ci.n,
+      "80% CI lav": ci.low,
+      "80% CI høj": ci.high
+    };
+
     const tr = document.createElement("tr");
     headers.forEach((h) => {
       const td = document.createElement("td");
-      td.textContent = String(row[h]).replace(".", ",");
+      const value = mergedRow[h];
+      if (!Number.isFinite(value)) {
+        td.textContent = String(value ?? "-");
+      } else if (h === "n") {
+        td.textContent = String(Math.round(value));
+      } else {
+        td.textContent = String(value).replace(".", ",");
+      }
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
@@ -950,24 +979,16 @@ function renderStats(data) {
   renderLastDpuCiReferenceChart(data);
   renderWilcoxonSection(data);
 
-  const dpuRows = data.map((row) => {
-    const values = SCALE_NAMES.map((s) => row[`Afvigelse_mdr_${s}`]);
-    const ci = meanCi(values);
-    return {
-      Name: row.DPU,
-      N: ci.n,
-      Mean: ci.mean,
-      Low: ci.low,
-      High: ci.high
-    };
-  });
-
-  renderStatsTable(document.getElementById("statsDpu"), dpuRows, "DPU");
   renderGenericTable(
     document.getElementById("statsScale"),
     ["Skala", "n", "Gns afvigelse (mdr)", "Min afvigelse (mdr)", "Max afvigelse (mdr)", `${CI_LABEL} lav`, `${CI_LABEL} høj`],
     buildScaleDeviationSummaryRows(data)
   );
+
+  const dpuContainer = document.getElementById("statsDpu");
+  if (dpuContainer) {
+    dpuContainer.innerHTML = "";
+  }
 }
 
 function renderLastDpuCiReferenceChart(data) {
