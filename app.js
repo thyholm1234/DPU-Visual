@@ -96,6 +96,7 @@ const EXAMPLE_ROWS = [
 ];
 let chartRenderWidthOverride = null;
 let suppressCellBlurCommit = false;
+let areCrossChartsExpanded = false;
 
 let state = { numDpu: DEFAULT_DPU, rows: makeDefaultRows(DEFAULT_DPU) };
 
@@ -111,6 +112,7 @@ const exportCsvEl = document.getElementById("exportCsv");
 const exportPdfEl = document.getElementById("exportPdf");
 const resetBtnEl = document.getElementById("resetBtn");
 const exampleBtnEl = document.getElementById("exampleBtn");
+const toggleCrossChartsEl = document.getElementById("toggleCrossCharts");
 
 numDpuEl.value = String(state.numDpu);
 numDpuEl.setAttribute("autocomplete", "off");
@@ -136,6 +138,11 @@ exampleBtnEl.addEventListener("click", () => {
   state.numDpu = EXAMPLE_ROWS.length;
   state.rows = normalizeRows(EXAMPLE_ROWS, EXAMPLE_ROWS.length);
   rerender();
+});
+
+toggleCrossChartsEl?.addEventListener("click", () => {
+  areCrossChartsExpanded = !areCrossChartsExpanded;
+  updateCrossChartsVisibility();
 });
 
 importCsvEl.addEventListener("change", async (event) => {
@@ -235,6 +242,7 @@ async function exportReportPdf() {
   const clone = source.cloneNode(true);
   clone.classList.add("pdf-render-root");
   clone.style.width = `${PDF_RENDER_WIDTH}px`;
+  clone.querySelector("#crossCharts")?.classList.remove("scale-cross-collapsed");
   clone.querySelectorAll(".no-print").forEach((el) => el.remove());
   renderHost.appendChild(clone);
   document.body.appendChild(renderHost);
@@ -2079,6 +2087,19 @@ function setDataSectionsVisible(visible) {
   }
 }
 
+function updateCrossChartsVisibility() {
+  const crossContainer = document.getElementById("crossCharts");
+  if (crossContainer) {
+    crossContainer.classList.toggle("scale-cross-collapsed", !areCrossChartsExpanded);
+  }
+  if (toggleCrossChartsEl) {
+    toggleCrossChartsEl.textContent = areCrossChartsExpanded
+      ? "Skjul 9x2 skala-grafer"
+      : "Udfold 9x2 skala-grafer";
+    toggleCrossChartsEl.setAttribute("aria-expanded", areCrossChartsExpanded ? "true" : "false");
+  }
+}
+
 function rerender() {
   state.rows = normalizeRows(state.rows, state.numDpu);
   numDpuEl.value = String(state.numDpu);
@@ -2099,6 +2120,7 @@ function rerenderDataViews() {
   const data = calculateData(validRows);
   renderComputedTable(data);
   renderCharts(data);
+  updateCrossChartsVisibility();
   renderStats(data);
 }
 

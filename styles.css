@@ -352,6 +352,14 @@ th {
   gap: 0.75rem;
 }
 
+.section-inline-actions {
+  margin: 0 0 0.6rem;
+}
+
+#crossCharts.scale-cross-collapsed {
+  display: none;
+}
+
 .chart {
   border: 0;
   border-radius: 0;
