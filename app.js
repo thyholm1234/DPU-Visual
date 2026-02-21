@@ -97,7 +97,7 @@ const EXAMPLE_ROWS = [
 let chartRenderWidthOverride = null;
 let suppressCellBlurCommit = false;
 
-let state = { numDpu: DEFAULT_DPU, rows: makeDefaultRows(DEFAULT_DPU), includeLastDpuInScaleAvg: true };
+let state = { numDpu: DEFAULT_DPU, rows: makeDefaultRows(DEFAULT_DPU) };
 
 clearLegacyBrowserStorage();
 
@@ -106,7 +106,6 @@ const inputTableEl = document.getElementById("inputTable");
 const computedTableEl = document.getElementById("computedTable");
 const graphsSectionEl = document.getElementById("graphsSection");
 const statsSectionEl = document.getElementById("statsSection");
-const toggleIncludeLastDpuEl = document.getElementById("toggleIncludeLastDpuScaleAvg");
 const importCsvEl = document.getElementById("importCsv");
 const exportCsvEl = document.getElementById("exportCsv");
 const exportPdfEl = document.getElementById("exportPdf");
@@ -138,13 +137,6 @@ exampleBtnEl.addEventListener("click", () => {
   state.rows = normalizeRows(EXAMPLE_ROWS, EXAMPLE_ROWS.length);
   rerender();
 });
-
-if (toggleIncludeLastDpuEl) {
-  toggleIncludeLastDpuEl.addEventListener("change", () => {
-    // Rerender stats when user toggles inclusion of last DPU in scale averages
-    rerender();
-  });
-}
 
 importCsvEl.addEventListener("change", async (event) => {
   const file = event.target.files?.[0];
@@ -1066,7 +1058,7 @@ function renderStats(data) {
   renderGenericTable(
     document.getElementById("statsScale"),
     ["Skala", "n", "Gns afvigelse (mdr)", "Min afvigelse (mdr)", "Max afvigelse (mdr)", `${CI_LABEL} lav`, `${CI_LABEL} høj`],
-    buildScaleDeviationSummaryRows(data, (toggleIncludeLastDpuEl ? toggleIncludeLastDpuEl.checked : true)),
+    buildScaleDeviationSummaryRows(data),
     {
       valueStyles: {
         "Gns afvigelse (mdr)": (value) => ({ color: deviationMeanColor(value), fontWeight: "700" })
@@ -1732,17 +1724,9 @@ function renderDeviationSummaries(data) {
   }
 }
 
-function buildScaleDeviationSummaryRows(data, includeLast = true) {
-  const dataToUse = (() => {
-    if (includeLast) return data;
-    if (!data || !data.length) return [];
-    const sorted = [...data].sort((a, b) => (Number.isFinite(a.Krono_mdr) ? a.Krono_mdr : Infinity) - (Number.isFinite(b.Krono_mdr) ? b.Krono_mdr : Infinity));
-    const last = sorted[sorted.length - 1];
-    return data.filter((r) => r !== last);
-  })();
-
+function buildScaleDeviationSummaryRows(data) {
   return SCALE_NAMES.map((scale) => {
-    const values = dataToUse.map((row) => row[`Afvigelse_mdr_${scale}`]).filter((v) => Number.isFinite(v));
+    const values = data.map((row) => row[`Afvigelse_mdr_${scale}`]).filter((v) => Number.isFinite(v));
     const ci = meanCi(values);
     return {
       Skala: scale,
