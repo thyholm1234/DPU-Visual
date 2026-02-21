@@ -2094,8 +2094,8 @@ function updateCrossChartsVisibility() {
   }
   if (toggleCrossChartsEl) {
     toggleCrossChartsEl.textContent = areCrossChartsExpanded
-      ? "Skjul 9x2 skala-grafer"
-      : "Udfold 9x2 skala-grafer";
+      ? "Skjul skala-grafer"
+      : "Udfold skala-grafer";
     toggleCrossChartsEl.setAttribute("aria-expanded", areCrossChartsExpanded ? "true" : "false");
   }
 }
