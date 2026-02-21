@@ -1674,6 +1674,9 @@ function renderScaleDeviationChart(data) {
   if (!container) return;
   container.innerHTML = "";
 
+  const sortedByAge = [...data].sort((a, b) => a.Krono_mdr - b.Krono_mdr);
+  const lastDpu = sortedByAge.length ? sortedByAge[sortedByAge.length - 1] : null;
+
   const deviationStatsByScale = SCALE_NAMES.map((scale) => {
     const vals = data
       .map((row) => row[`Afvigelse_mdr_${scale}`])
@@ -1694,6 +1697,13 @@ function renderScaleDeviationChart(data) {
         name: "Gns afvigelse (mdr)",
         values: deviationStatsByScale.map((entry) => round1(entry.mean)),
         colorClass: "series-color-3"
+      },
+      {
+        name: "Sidste DPU afvigelse (mdr)",
+        values: SCALE_NAMES.map((scale) => round1(lastDpu?.[`Afvigelse_mdr_${scale}`])),
+        colorClass: "series-color-1",
+        dashed: true,
+        initiallyVisible: false
       }
     ],
     "Afvigelse (mdr)",
